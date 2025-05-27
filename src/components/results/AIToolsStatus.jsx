@@ -112,17 +112,36 @@ const AIToolsStatus = ({ analysisData }) => {
         dataSource: 'real',
         confidence: 0.8,
         icon: FileText
-      }
-    ],
-    planned: [
+      },
       {
         name: 'Computer Vision OCR',
         category: 'Document Processing',
-        status: 'planned',
-        description: 'Scanned document and image text extraction for non-text PDFs',
-        expectedImplementation: 'Q3 2024',
+        status: 'active',
+        description: 'Tesseract.js OCR for scanned documents and image text extraction',
+        dataSource: 'real',
+        confidence: 0.75,
         icon: FileText
       },
+      {
+        name: 'Advanced Text Analytics',
+        category: 'Text Analysis',
+        status: 'active',
+        description: 'Readability analysis, complexity scoring, semantic analysis, and keyword extraction',
+        dataSource: 'real',
+        confidence: 0.85,
+        icon: Brain
+      },
+      {
+        name: 'Enhanced Skill Confidence',
+        category: 'Skills Analysis',
+        status: 'active',
+        description: 'Advanced confidence scoring based on context, evidence, and experience level',
+        dataSource: 'real',
+        confidence: 0.8,
+        icon: TrendingUp
+      }
+    ],
+    planned: [
       {
         name: 'Advanced ML Models',
         category: 'Enhanced AI',
@@ -138,6 +157,14 @@ const AIToolsStatus = ({ analysisData }) => {
         description: 'Video interview analysis with facial expression and gesture recognition',
         expectedImplementation: 'Q1 2025',
         icon: Mic
+      },
+      {
+        name: 'Predictive Analytics',
+        category: 'AI Insights',
+        status: 'planned',
+        description: 'Job performance prediction and cultural fit analysis using ML',
+        expectedImplementation: 'Q2 2025',
+        icon: TrendingUp
       }
     ]
   };

@@ -11,39 +11,89 @@ import {
   extractPersonalityTraits,
   analyzeLeadershipSkills
 } from './audioTranscriptAnalyzer.js';
+import { ocrService } from './ocrService.js';
+import { advancedAnalyticsService } from './advancedAnalyticsService.js';
+import { skillConfidenceService } from './skillConfidenceService.js';
 
 export const processCVText = async (file) => {
   try {
-    // Extract text from PDF using PDF.js
-    const extractionResult = await extractTextFromPDF(file);
+    let extractionResult;
+    let processingMethod = 'PDF.js';
 
-    if (!extractionResult.success) {
-      throw new Error(extractionResult.error || 'Failed to extract text from PDF');
+    // Check if file is an image (for OCR processing)
+    const imageFormats = ['image/jpeg', 'image/png', 'image/bmp', 'image/tiff'];
+
+    if (imageFormats.includes(file.type)) {
+      console.log('Processing image file with OCR...');
+      processingMethod = 'OCR';
+
+      // Check OCR availability
+      const ocrAvailable = await ocrService.checkAvailability();
+      if (!ocrAvailable) {
+        throw new Error('OCR service not available for image processing');
+      }
+
+      // Process with OCR
+      extractionResult = await ocrService.processScannedDocument(file);
+
+      if (!extractionResult.success) {
+        throw new Error(extractionResult.error || 'Failed to extract text from image using OCR');
+      }
+
+    } else {
+      // Extract text from PDF using PDF.js
+      extractionResult = await extractTextFromPDF(file);
+
+      if (!extractionResult.success) {
+        // If PDF.js fails and text is very short, try OCR as fallback
+        if (extractionResult.text && extractionResult.text.length < 100) {
+          console.log('PDF text extraction yielded minimal text, attempting OCR fallback...');
+          try {
+            const ocrAvailable = await ocrService.checkAvailability();
+            if (ocrAvailable) {
+              const ocrResult = await ocrService.processScannedDocument(file);
+              if (ocrResult.success && ocrResult.extractedText.length > extractionResult.text.length) {
+                extractionResult = ocrResult;
+                processingMethod = 'OCR (Fallback)';
+              }
+            }
+          } catch (ocrError) {
+            console.warn('OCR fallback failed:', ocrError);
+          }
+        }
+
+        if (!extractionResult.success) {
+          throw new Error(extractionResult.error || 'Failed to extract text from PDF');
+        }
+      }
     }
 
     // Parse the extracted text into structured CV data
-    const parsedCV = parseCV(extractionResult.text);
+    const parsedCV = parseCV(extractionResult.extractedText || extractionResult.text);
 
     return {
       success: true,
-      extractedText: extractionResult.text,
+      extractedText: extractionResult.extractedText || extractionResult.text,
       parsedData: parsedCV,
       metadata: {
         fileName: file.name,
         fileSize: file.size,
-        pageCount: extractionResult.metadata.totalPages,
-        wordCount: extractionResult.metadata.wordCount,
-        characterCount: extractionResult.metadata.characterCount,
+        pageCount: extractionResult.metadata?.totalPages || 1,
+        wordCount: extractionResult.metadata?.wordCount || 0,
+        characterCount: extractionResult.metadata?.characterCount || 0,
         processingTime: 'Real-time',
-        extractedAt: extractionResult.metadata.extractedAt,
+        extractedAt: extractionResult.metadata?.extractedAt || new Date().toISOString(),
         sections: Object.keys(parsedCV.sections),
-        isPDFExtraction: true
+        processingMethod,
+        isPDFExtraction: processingMethod.includes('PDF'),
+        isOCRExtraction: processingMethod.includes('OCR'),
+        ocrConfidence: extractionResult.confidence || null
       }
     };
 
   } catch (error) {
     console.error('CV processing error:', error);
-    throw new Error(`Failed to process CV: ${error.message}. Please ensure the PDF is valid and try again.`);
+    throw new Error(`Failed to process CV: ${error.message}. Please ensure the file is valid and try again.`);
   }
 };
 
@@ -117,6 +167,9 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
     // Use enhanced NLP for comprehensive CV analysis (spaCy + compromise)
     const nlpAnalysis = await analyzeCVWithNLP(cvText, desiredSkills);
 
+    // Perform advanced text analytics on CV
+    const advancedAnalytics = advancedAnalyticsService.analyzeText(cvText);
+
     // Analyze communication from audio transcript with metadata
     const communicationAnalysis = analyzeAudioCommunication(audioTranscript, audioResult);
 
@@ -160,6 +213,17 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
         }
       }
 
+      // Calculate enhanced confidence if skill is found
+      let enhancedConfidence = null;
+      if (found && nlpMatch) {
+        enhancedConfidence = skillConfidenceService.calculateEnhancedConfidence(
+          nlpMatch,
+          cvText,
+          nlpAnalysis.experience
+        );
+        confidence = enhancedConfidence.enhancedConfidence;
+      }
+
       return {
         skill: desiredSkill.name,
         priority: desiredSkill.priority,
@@ -168,7 +232,8 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
         confidence,
         source,
         score: found ? confidence * desiredSkill.weight : 0,
-        nlpCategory: nlpMatch ? nlpMatch.category : null
+        nlpCategory: nlpMatch ? nlpMatch.category : null,
+        enhancedConfidence: enhancedConfidence
       };
     });
 
@@ -267,12 +332,22 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
         confidence: nlpAnalysis.metadata.confidence
       },
       communicationAnalysis,
+      advancedAnalytics: {
+        readability: advancedAnalytics.readability,
+        complexity: advancedAnalytics.complexity,
+        semantics: advancedAnalytics.semantics,
+        structure: advancedAnalytics.structure,
+        keywords: advancedAnalytics.keywords.slice(0, 10), // Top 10 keywords
+        topics: advancedAnalytics.topics.slice(0, 5) // Top 5 topics
+      },
       metadata: {
         analysisMethod: spacyAvailable ? 'spaCy Dutch NLP Enhanced' : 'Compromise NLP Enhanced',
         processingTime: nlpAnalysis.metadata.processingTime,
         confidence: nlpAnalysis.metadata.confidence,
         spacyEnhanced: spacyAvailable,
-        nlpMethod: nlpAnalysis.metadata.processingMethod
+        nlpMethod: nlpAnalysis.metadata.processingMethod,
+        advancedAnalyticsEnabled: true,
+        skillConfidenceEnhanced: true
       }
     };
 

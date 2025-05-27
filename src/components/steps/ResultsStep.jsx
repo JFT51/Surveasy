@@ -13,6 +13,7 @@ import FullTextDisplay from '../results/FullTextDisplay';
 import WhisperDebugPanel from '../debug/WhisperDebugPanel';
 import SpacyDebugPanel from '../debug/SpacyDebugPanel';
 import AudioAnalysisResults from '../results/AudioAnalysisResults';
+import AdvancedAnalytics from '../results/AdvancedAnalytics';
 
 const ResultsStep = () => {
   const { state, resetApp } = useApp();
@@ -63,6 +64,7 @@ const ResultsStep = () => {
   const tabs = [
     { id: 'overview', label: 'Overzicht', icon: BarChart3 },
     { id: 'audio-analysis', label: 'Audio Analyse', icon: Mic },
+    { id: 'advanced-analytics', label: 'Geavanceerde Analyse', icon: Brain },
     { id: 'charts', label: 'Grafieken', icon: PieChart },
     { id: 'skills', label: 'Vaardigheden Detail', icon: Award },
     { id: 'ai-tools', label: 'AI Tools Status', icon: Brain },
@@ -225,6 +227,10 @@ const ResultsStep = () => {
           communicationAnalysis={analysis.communicationAnalysis}
           audioMetadata={state.extractedData.audioResult?.metadata}
         />
+      )}
+
+      {activeTab === 'advanced-analytics' && (
+        <AdvancedAnalytics analysisData={analysis} />
       )}
 
       {activeTab === 'charts' && (
