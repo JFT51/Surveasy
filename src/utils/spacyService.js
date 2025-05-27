@@ -22,7 +22,6 @@ const getSpacyServiceUrl = () => {
 };
 
 const SPACY_SERVICE_URL = getSpacyServiceUrl();
-const IS_DEMO_MODE = SPACY_SERVICE_URL === null;
 
 /**
  * spaCy service client for advanced Dutch NLP operations
@@ -32,26 +31,12 @@ export class SpacyService {
     this.baseUrl = baseUrl;
     this.isAvailable = false;
     this.serviceInfo = null;
-    this.isDemoMode = IS_DEMO_MODE;
   }
 
   /**
    * Check if spaCy service is available
    */
   async checkAvailability() {
-    // If in demo mode (Netlify deployment), return false immediately
-    if (this.isDemoMode) {
-      console.log('Running in demo mode - spaCy service disabled');
-      this.serviceInfo = {
-        status: "demo",
-        message: "Running in demo mode on Netlify",
-        spacy_available: false,
-        model_loaded: false,
-        demo_mode: true
-      };
-      this.isAvailable = false;
-      return false;
-    }
 
     try {
       console.log('Checking spaCy service availability...');
@@ -135,11 +120,6 @@ export class SpacyService {
    * @returns {Promise<Object>} - Extracted skills by category
    */
   async extractSkills(text) {
-    if (this.isDemoMode) {
-      console.log('Demo mode: Using fallback skills extraction');
-      return this.getDemoSkills(text);
-    }
-
     if (!this.isAvailable) {
       throw new Error('spaCy service is not available');
     }
@@ -171,105 +151,39 @@ export class SpacyService {
   }
 
   /**
-   * Get demo analysis for when spaCy service is not available
+   * Analyze text using spaCy Dutch NLP
+   * @param {string} text - Text to analyze
+   * @returns {Promise<Object>} - Complete analysis results
    */
-  getDemoAnalysis(text) {
-    const words = text.split(/\s+/).filter(word => word.length > 0);
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  async analyzeText(text) {
+    if (!this.isAvailable) {
+      throw new Error('spaCy service is not available');
+    }
 
-    return {
-      entities: {
-        persons: [],
-        organizations: [],
-        locations: [],
-        dates: [],
-        money: [],
-        other: []
-      },
-      skills: this.getDemoSkills(text),
-      syntax: {
-        pos_distribution: { NOUN: 25, VERB: 15, ADJ: 10, ADV: 5 },
-        dependency_distribution: { ROOT: 5, nsubj: 8, dobj: 6 },
-        sentence_count: sentences.length,
-        token_count: words.length,
-        complexity_score: 0.6
-      },
-      key_phrases: [
-        { text: "software ontwikkeling", type: "noun_chunk", start: 0, end: 20 },
-        { text: "projectmanagement", type: "technical_term", start: 25, end: 42 }
-      ],
-      sentiment: {
-        score: 0.7,
-        positive_indicators: 3,
-        negative_indicators: 1,
-        overall: "positive"
-      },
-      experience: [],
-      education: [],
-      statistics: {
-        character_count: text.length,
-        word_count: words.length,
-        sentence_count: sentences.length,
-        average_words_per_sentence: sentences.length > 0 ? Math.round(words.length / sentences.length) : 0,
-        unique_words: Math.round(words.length * 0.7),
-        lexical_diversity: 0.7
-      },
-      processing_info: {
-        model: "demo",
-        language: "nl",
-        timestamp: new Date().toISOString(),
-        text_length: text.length,
-        tokens: words.length,
-        sentences: sentences.length,
-        demo_mode: true
-      }
-    };
-  }
+    try {
+      console.log('Analyzing text with spaCy...');
 
-  /**
-   * Get demo skills for when spaCy service is not available
-   */
-  getDemoSkills(text) {
-    const lowerText = text.toLowerCase();
-    const demoSkills = {
-      programming_languages: [],
-      frameworks: [],
-      databases: [],
-      cloud_platforms: [],
-      tools: [],
-      methodologies: [],
-      soft_skills: [],
-      languages: []
-    };
-
-    // Simple keyword matching for demo
-    const skillKeywords = {
-      programming_languages: ['javascript', 'python', 'java', 'react', 'vue'],
-      frameworks: ['react', 'vue', 'angular', 'django', 'flask'],
-      databases: ['mysql', 'postgresql', 'mongodb'],
-      cloud_platforms: ['aws', 'azure', 'google cloud'],
-      tools: ['git', 'docker', 'jenkins'],
-      methodologies: ['agile', 'scrum', 'devops'],
-      soft_skills: ['communicatie', 'teamwork', 'leiderschap'],
-      languages: ['nederlands', 'engels', 'duits']
-    };
-
-    Object.entries(skillKeywords).forEach(([category, keywords]) => {
-      keywords.forEach(keyword => {
-        if (lowerText.includes(keyword)) {
-          demoSkills[category].push({
-            name: keyword,
-            confidence: 0.8,
-            start: lowerText.indexOf(keyword),
-            end: lowerText.indexOf(keyword) + keyword.length,
-            context: `Demo context for ${keyword}`,
-            demo_mode: true
-          });
-        }
+      const response = await fetch(`${this.baseUrl}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
       });
-    });
 
-    return demoSkills;
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('spaCy text analysis completed');
+        return result;
+      } else {
+        console.error('spaCy text analysis failed:', result.error);
+        throw new Error(result.error || 'Text analysis failed');
+      }
+    } catch (error) {
+      console.error('spaCy text analysis error:', error);
+      throw error;
+    }
   }
 
   /**
@@ -281,26 +195,26 @@ export class SpacyService {
     return {
       // Enhanced skills with spaCy analysis
       skills: this.formatSkills(spacyResult.skills),
-      
+
       // Named entities
       entities: spacyResult.entities,
-      
+
       // Text statistics
       statistics: spacyResult.statistics,
-      
+
       // Sentiment analysis
       sentiment: spacyResult.sentiment,
-      
+
       // Key phrases and technical terms
       keyPhrases: spacyResult.key_phrases,
-      
+
       // Syntax analysis
       syntax: spacyResult.syntax,
-      
+
       // Experience and education
       experience: spacyResult.experience,
       education: spacyResult.education,
-      
+
       // Processing metadata
       metadata: {
         ...spacyResult.processing_info,
@@ -315,7 +229,7 @@ export class SpacyService {
    */
   formatSkills(spacySkills) {
     const formattedSkills = {};
-    
+
     Object.entries(spacySkills).forEach(([category, skills]) => {
       formattedSkills[category] = skills.map(skill => ({
         name: skill.name,
@@ -340,15 +254,15 @@ export class SpacyService {
     const skillsCount = Object.values(spacyResult.skills).flat().length;
     const entitiesCount = Object.values(spacyResult.entities).flat().length;
     const complexityScore = spacyResult.syntax.complexity_score;
-    
+
     // Base confidence on amount of extracted information
     let confidence = 0.5;
-    
+
     if (skillsCount > 5) confidence += 0.2;
     if (entitiesCount > 3) confidence += 0.1;
     if (complexityScore > 0.5) confidence += 0.1;
     if (spacyResult.statistics.word_count > 100) confidence += 0.1;
-    
+
     return Math.min(confidence, 1.0);
   }
 }

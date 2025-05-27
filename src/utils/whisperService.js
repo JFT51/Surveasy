@@ -22,7 +22,6 @@ const getWhisperServiceUrl = () => {
 };
 
 const WHISPER_SERVICE_URL = getWhisperServiceUrl();
-const IS_DEMO_MODE = WHISPER_SERVICE_URL === null;
 
 /**
  * Whisper service client for speech-to-text operations
@@ -32,26 +31,12 @@ export class WhisperService {
     this.baseUrl = baseUrl;
     this.isAvailable = false;
     this.serviceInfo = null;
-    this.isDemoMode = IS_DEMO_MODE;
   }
 
   /**
    * Check if Whisper service is available
    */
   async checkAvailability() {
-    // If in demo mode (Netlify deployment), return false immediately
-    if (this.isDemoMode) {
-      console.log('Running in demo mode - Whisper service disabled');
-      this.serviceInfo = {
-        status: "demo",
-        message: "Running in demo mode on Netlify",
-        whisper_available: false,
-        model_loaded: false,
-        demo_mode: true
-      };
-      this.isAvailable = false;
-      return false;
-    }
 
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
@@ -312,46 +297,7 @@ export const formatTranscriptionResult = (result) => {
   };
 };
 
-/**
- * Generate mock transcription for fallback
- */
-export const generateMockTranscription = (duration = 30) => {
-  const mockTexts = [
-    "Goedemiddag, ik ben zeer geïnteresseerd in deze functie. Ik heb ruime ervaring met JavaScript, React en Node.js.",
-    "Mijn achtergrond is in software ontwikkeling en ik heb gewerkt aan verschillende projecten met moderne technologieën.",
-    "Ik ben een teamspeler en hou van uitdagingen. Communicatie en samenwerking zijn voor mij zeer belangrijk.",
-    "In mijn vorige functie heb ik geleid aan de implementatie van een nieuwe applicatie architectuur.",
-    "Ik ben altijd bereid om nieuwe technologieën te leren en mijn vaardigheden verder te ontwikkelen."
-  ];
 
-  const selectedText = mockTexts[Math.floor(Math.random() * mockTexts.length)];
-
-  return {
-    text: selectedText,
-    language: "nl",
-    wordCount: selectedText.split(' ').length,
-    duration: duration,
-    confidence: 0.85 + Math.random() * 0.1, // 85-95%
-    segments: [{
-      start: 0,
-      end: duration,
-      text: selectedText,
-      words: selectedText.split(' ').map((word, index) => ({
-        word,
-        start: (index / selectedText.split(' ').length) * duration,
-        end: ((index + 1) / selectedText.split(' ').length) * duration,
-        probability: 0.8 + Math.random() * 0.2
-      }))
-    }],
-    processingInfo: {
-      model: "mock",
-      device: "browser",
-      task: "transcribe",
-      timestamp: new Date().toISOString(),
-      isMockData: true
-    }
-  };
-};
 
 // Create singleton instance
 export const whisperService = new WhisperService();

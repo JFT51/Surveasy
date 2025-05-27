@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Mic, MicOff, Square, Play, Pause, Download, Upload, 
+import {
+  Mic, MicOff, Square, Play, Pause, Download, Upload,
   Volume2, Clock, Zap, CheckCircle, AlertTriangle, Loader
 } from 'lucide-react';
 import { AudioRecorder, whisperService, blobToFile, formatTranscriptionResult, generateMockTranscription } from '../utils/whisperService';
@@ -44,7 +44,7 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
       await audioRecorderRef.current.startRecording();
       setIsRecording(true);
       setRecordingTime(0);
-      
+
       // Start timer
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -60,7 +60,7 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
       const blob = await audioRecorderRef.current.stopRecording();
       setAudioBlob(blob);
       setIsRecording(false);
-      
+
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
       }
@@ -109,29 +109,23 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
       setError(null);
 
       const audioFile = blobToFile(blob, 'recording.webm');
-      
-      if (whisperAvailable) {
-        const result = await whisperService.transcribeAudio(audioFile, {
-          language: 'nl',
-          task: 'transcribe',
-          wordTimestamps: true,
-          initialPrompt: 'Dit is een sollicitatiegesprek in het Nederlands.'
-        });
 
-        const formattedResult = formatTranscriptionResult(result);
-        setTranscriptionResult(formattedResult);
-        
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(formattedResult);
-        }
-      } else {
-        // Fallback to mock transcription
-        const mockResult = generateMockTranscription(recordingTime);
-        setTranscriptionResult(mockResult);
-        
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(mockResult);
-        }
+      if (!whisperAvailable) {
+        throw new Error('Whisper service is not available. Please ensure the Whisper service is running on port 5000.');
+      }
+
+      const result = await whisperService.transcribeAudio(audioFile, {
+        language: 'nl',
+        task: 'transcribe',
+        wordTimestamps: true,
+        initialPrompt: 'Dit is een sollicitatiegesprek in het Nederlands.'
+      });
+
+      const formattedResult = formatTranscriptionResult(result);
+      setTranscriptionResult(formattedResult);
+
+      if (onTranscriptionComplete) {
+        onTranscriptionComplete(formattedResult);
       }
     } catch (error) {
       setError('Transcriptie mislukt. Probeer opnieuw.');
@@ -158,27 +152,21 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
       }
 
       // Transcribe uploaded file
-      if (whisperAvailable) {
-        const result = await whisperService.transcribeAudio(file, {
-          language: 'nl',
-          task: 'transcribe',
-          wordTimestamps: true
-        });
+      if (!whisperAvailable) {
+        throw new Error('Whisper service is not available. Please ensure the Whisper service is running on port 5000.');
+      }
 
-        const formattedResult = formatTranscriptionResult(result);
-        setTranscriptionResult(formattedResult);
-        
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(formattedResult);
-        }
-      } else {
-        // Generate mock transcription for uploaded file
-        const mockResult = generateMockTranscription(60); // Assume 60 seconds
-        setTranscriptionResult(mockResult);
-        
-        if (onTranscriptionComplete) {
-          onTranscriptionComplete(mockResult);
-        }
+      const result = await whisperService.transcribeAudio(file, {
+        language: 'nl',
+        task: 'transcribe',
+        wordTimestamps: true
+      });
+
+      const formattedResult = formatTranscriptionResult(result);
+      setTranscriptionResult(formattedResult);
+
+      if (onTranscriptionComplete) {
+        onTranscriptionComplete(formattedResult);
       }
     } catch (error) {
       setError('Bestand upload mislukt.');

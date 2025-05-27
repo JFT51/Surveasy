@@ -43,88 +43,14 @@ export const processCVText = async (file) => {
 
   } catch (error) {
     console.error('CV processing error:', error);
-
-    // Fallback to mock data if PDF processing fails
-    return await processCVTextFallback(file, error.message);
+    throw new Error(`Failed to process CV: ${error.message}. Please ensure the PDF is valid and try again.`);
   }
 };
 
-// Fallback mock processing for when PDF.js fails
-const processCVTextFallback = async (file, errorMessage) => {
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const mockCVText = `
-    Tom De Wilde
-    38 jaar
-
-    WERKERVARING:
-    - Importcoördinator bij internationale rederij in Antwerpen (6 jaar)
-    - Maritieme logistiek specialist (10+ jaar ervaring)
-    - Verantwoordelijk voor volledige importproces
-    - Opvolgen van documenten en douaneformaliteiten
-    - Coördineren van transport naar eindklant
-    - Aanspreekpunt voor klanten en douane-agenten
-    - Complexe zendingen en afwijkingen behandelen
-
-    TECHNISCHE VAARDIGHEDEN:
-    - SAP TM (dagelijks gebruik)
-    - Portbase platform
-    - Track & Trace tools
-    - EDI-integraties
-    - WMS-systeem implementatie
-    - Douaneformaliteiten
-    - Import/Export procedures
-
-    SOFT SKILLS:
-    - Communicatievaardigheden
-    - Probleemoplossend denken
-    - Tijdsmanagement
-    - Stressbestendigheid
-    - Klantgerichtheid
-    - Internationale samenwerking
-  `;
-
-  const parsedCV = parseCV(mockCVText.trim());
-
-  return {
-    success: true,
-    extractedText: mockCVText.trim(),
-    parsedData: parsedCV,
-    metadata: {
-      fileName: file.name,
-      fileSize: file.size,
-      pageCount: 1,
-      wordCount: mockCVText.split(' ').length,
-      processingTime: 'Fallback mode',
-      fallbackReason: errorMessage,
-      extractedAt: new Date().toISOString(),
-      isPDFExtraction: false
-    },
-    isFallback: true
-  };
-};
 
 export const processAudioTranscript = async (file) => {
-  // Simulate audio transcription delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // Mock audio transcription (in real app, would use Web Speech API or Whisper)
-  const mockTranscript = `
-    Goedemorgen, dank u wel. Mijn naam is Tom De Wilde. Ik ben 38 jaar en heb meer dan tien jaar ervaring in de maritieme logistiek. De afgelopen zes jaar werkte ik als importcoördinator bij een internationale rederij in Antwerpen.
-
-    Ik was verantwoordelijk voor het volledige importproces: van het opvolgen van documenten en douaneformaliteiten tot het coördineren van transport naar de eindklant. Daarnaast was ik ook het aanspreekpunt voor klanten en douane-agenten, vooral bij complexe zendingen of afwijkingen.
-
-    In zulke situaties is communicatie cruciaal. Ik probeer onmiddellijk contact op te nemen met de betrokken partijen – zoals de douane, expediteurs en de klant – om zo snel mogelijk duidelijkheid te krijgen. Tegelijk stel ik een alternatief plan op zodat er geen verdere vertragingen ontstaan. Snel schakelen en kalm blijven is de sleutel.
-
-    Absoluut. Ik werk dagelijks met systemen zoals SAP TM en Portbase. Daarnaast heb ik ervaring met Track & Trace-tools en EDI-integraties. In mijn vorige functie heb ik ook meegewerkt aan de implementatie van een nieuw WMS-systeem.
-
-    Ik denk dat proactiviteit en probleemoplossend denken essentieel zijn. Je moet risico's kunnen inschatten nog vóór ze zich voordoen. Daarnaast is kennis van internationale regelgeving een must, net als het vermogen om helder te communiceren met partners over de hele wereld.
-
-    Het internationale karakter en de continue uitdaging. Geen enkele dag is hetzelfde. Ik hou van de complexiteit en het feit dat je voortdurend moet meedenken en schakelen op operationeel én strategisch niveau.
-  `;
-
-  return mockTranscript.trim();
+  throw new Error('This function is deprecated. Use processAudioWithWhisper instead for real audio transcription.');
 };
 
 /**
@@ -140,130 +66,46 @@ export const processAudioWithWhisper = async (audioFile, options = {}) => {
     // Check if Whisper service is available
     const isWhisperAvailable = await whisperService.checkAvailability();
 
-    if (isWhisperAvailable) {
-      console.log('Using Whisper service for transcription');
-
-      // Use real Whisper transcription
-      const transcriptionResult = await whisperService.transcribeAudio(audioFile, {
-        language: 'nl',
-        task: 'transcribe',
-        wordTimestamps: true,
-        initialPrompt: 'Dit is een sollicitatiegesprek in het Nederlands.',
-        ...options
-      });
-
-      const formattedResult = formatTranscriptionResult(transcriptionResult);
-
-      return {
-        success: true,
-        audioTranscript: formattedResult.text,
-        transcriptionData: formattedResult,
-        metadata: {
-          fileName: audioFile.name,
-          fileSize: audioFile.size,
-          transcriptionMethod: 'Whisper',
-          language: formattedResult.language,
-          confidence: formattedResult.confidence,
-          duration: formattedResult.duration,
-          wordCount: formattedResult.wordCount,
-          processingTime: new Date().toISOString(),
-          isRealTranscription: true
-        }
-      };
-    } else {
-      console.log('Whisper service not available, using mock transcription');
-
-      // Fallback to mock transcription
-      const mockTranscription = generateMockAudioTranscript();
-
-      return {
-        success: true,
-        audioTranscript: mockTranscription,
-        transcriptionData: {
-          text: mockTranscription,
-          language: 'nl',
-          confidence: 0.85,
-          duration: 120,
-          wordCount: mockTranscription.split(' ').length,
-          segments: [],
-          processingInfo: {
-            model: 'mock',
-            device: 'browser',
-            isMockData: true
-          }
-        },
-        metadata: {
-          fileName: audioFile.name,
-          fileSize: audioFile.size,
-          transcriptionMethod: 'Mock',
-          language: 'nl',
-          confidence: 0.85,
-          duration: 120,
-          wordCount: mockTranscription.split(' ').length,
-          processingTime: new Date().toISOString(),
-          isRealTranscription: false
-        }
-      };
+    if (!isWhisperAvailable) {
+      throw new Error('Whisper service is not available. Please ensure the Whisper service is running on port 5000.');
     }
-  } catch (error) {
-    console.error('Audio processing error:', error);
 
-    // Fallback to mock data on error
-    const mockTranscription = generateMockAudioTranscript();
+    console.log('Using Whisper service for transcription');
+
+    // Use real Whisper transcription
+    const transcriptionResult = await whisperService.transcribeAudio(audioFile, {
+      language: 'nl',
+      task: 'transcribe',
+      wordTimestamps: true,
+      initialPrompt: 'Dit is een sollicitatiegesprek in het Nederlands.',
+      ...options
+    });
+
+    const formattedResult = formatTranscriptionResult(transcriptionResult);
 
     return {
-      success: false,
-      error: error.message,
-      audioTranscript: mockTranscription,
-      transcriptionData: {
-        text: mockTranscription,
-        language: 'nl',
-        confidence: 0.7,
-        duration: 120,
-        wordCount: mockTranscription.split(' ').length,
-        segments: [],
-        processingInfo: {
-          model: 'fallback',
-          device: 'browser',
-          isMockData: true,
-          error: error.message
-        }
-      },
+      success: true,
+      audioTranscript: formattedResult.text,
+      transcriptionData: formattedResult,
       metadata: {
-        fileName: audioFile?.name || 'unknown',
-        fileSize: audioFile?.size || 0,
-        transcriptionMethod: 'Fallback',
-        language: 'nl',
-        confidence: 0.7,
-        duration: 120,
+        fileName: audioFile.name,
+        fileSize: audioFile.size,
+        transcriptionMethod: 'Whisper',
+        language: formattedResult.language,
+        confidence: formattedResult.confidence,
+        duration: formattedResult.duration,
+        wordCount: formattedResult.wordCount,
         processingTime: new Date().toISOString(),
-        isRealTranscription: false,
-        error: error.message
+        isRealTranscription: true
       }
     };
+  } catch (error) {
+    console.error('Audio processing error:', error);
+    throw new Error(`Failed to process audio: ${error.message}. Please ensure the Whisper service is running and the audio file is valid.`);
   }
 };
 
-/**
- * Generate mock audio transcript for fallback
- */
-const generateMockAudioTranscript = () => {
-  const mockTranscripts = [
-    `Goedemorgen, dank u wel. Mijn naam is Tom De Wilde. Ik ben 38 jaar en heb meer dan tien jaar ervaring in de maritieme logistiek. De afgelopen zes jaar werkte ik als importcoördinator bij een internationale rederij in Antwerpen.
 
-Ik was verantwoordelijk voor het volledige importproces: van het opvolgen van documenten en douaneformaliteiten tot het coördineren van transport naar de eindklant. Daarnaast was ik ook het aanspreekpunt voor klanten en douane-agenten, vooral bij complexe zendingen of afwijkingen.
-
-In zulke situaties is communicatie cruciaal. Ik probeer onmiddellijk contact op te nemen met de betrokken partijen – zoals de douane, expediteurs en de klant – om zo snel mogelijk duidelijkheid te krijgen. Tegelijk stel ik een alternatief plan op zodat er geen verdere vertragingen ontstaan.`,
-
-    `Goedemiddag. Ik ben zeer geïnteresseerd in deze functie omdat het perfect aansluit bij mijn achtergrond in software ontwikkeling. Ik heb ruime ervaring met JavaScript, React en Node.js, en ik heb gewerkt aan verschillende projecten met moderne technologieën.
-
-Mijn sterke punten zijn probleemoplossend denken en teamwork. Ik ben een goede communicator en hou van uitdagingen. In mijn vorige functie heb ik geleid aan de implementatie van een nieuwe applicatie architectuur die de performance met 40% verbeterde.
-
-Ik ben altijd bereid om nieuwe technologieën te leren en mijn vaardigheden verder te ontwikkelen. Continuous learning is voor mij essentieel in deze snel veranderende sector.`
-  ];
-
-  return mockTranscripts[Math.floor(Math.random() * mockTranscripts.length)];
-};
 
 export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, audioResult = null) => {
   try {
@@ -437,10 +279,8 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
     };
 
   } catch (error) {
-    console.error('NLP analysis failed, using fallback:', error);
-
-    // Fallback to original analysis
-    return analyzeCandidate_Fallback(cvText, audioTranscript, desiredSkills);
+    console.error('Enhanced candidate analysis failed:', error);
+    throw new Error(`Candidate analysis failed: ${error.message}. Please ensure all AI services are running and try again.`);
   }
 };
 
@@ -465,19 +305,7 @@ const getRelatedTerms = (skill) => {
   return relatedTermsMap[skill] || [];
 };
 
-const extractSkillsFromText = (text) => {
-  // Mock skill extraction - in real app would use NLP
-  const commonSkills = [
-    'SAP TM', 'Portbase', 'Douaneformaliteiten', 'Import/Export procedures',
-    'Communicatievaardigheden', 'Probleemoplossend denken', 'Tijdsmanagement',
-    'EDI-integraties', 'Track & Trace', 'WMS systemen', 'Maritieme logistiek',
-    'Internationale regelgeving', 'Stressbestendigheid', 'Klantgerichtheid'
-  ];
 
-  return commonSkills.filter(skill =>
-    text.toLowerCase().includes(skill.toLowerCase())
-  ).slice(0, 10);
-};
 
 /**
  * Enhanced audio communication analysis using advanced transcript analyzer
@@ -587,83 +415,4 @@ const analyzeAudioCommunication = (audioTranscript, audioResult = null) => {
   };
 };
 
-/**
- * Fallback analysis function
- */
-const analyzeCandidate_Fallback = async (cvText, audioTranscript, desiredSkills) => {
-  console.log('Using fallback candidate analysis...');
 
-  // Simulate analysis delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // Extract skills from CV and transcript
-  const combinedText = (cvText + ' ' + audioTranscript).toLowerCase();
-
-  // Basic skill matching
-  const skillMatches = desiredSkills.map(desiredSkill => {
-    const skillName = desiredSkill.name.toLowerCase();
-    const found = combinedText.includes(skillName);
-
-    return {
-      skill: desiredSkill.name,
-      priority: desiredSkill.priority,
-      weight: desiredSkill.weight,
-      found,
-      confidence: found ? 0.7 : 0,
-      source: found ? ['CV', 'Interview'] : [],
-      score: found ? 0.7 * desiredSkill.weight : 0
-    };
-  });
-
-  // Calculate overall score
-  const totalPossibleScore = desiredSkills.reduce((sum, skill) => sum + skill.weight, 0);
-  const actualScore = skillMatches.reduce((sum, match) => sum + match.score, 0);
-  const overallScore = totalPossibleScore > 0 ? Math.round((actualScore / totalPossibleScore) * 100) : 0;
-
-  // Determine candidate category
-  let candidateCategory;
-  if (overallScore >= 80) {
-    candidateCategory = {
-      type: 'high_match',
-      label: 'Hoge Match',
-      color: 'green',
-      icon: '🟢',
-      description: 'Uitstekende kandidaat met sterke technische vaardigheden'
-    };
-  } else if (overallScore >= 60) {
-    candidateCategory = {
-      type: 'good_communication',
-      label: 'Goede Match',
-      color: 'yellow',
-      icon: '🟡',
-      description: 'Goede kandidaat met potentieel'
-    };
-  } else {
-    candidateCategory = {
-      type: 'potential',
-      label: 'Potentieel',
-      color: 'orange',
-      icon: '🟠',
-      description: 'Kandidaat heeft ontwikkeling nodig'
-    };
-  }
-
-  return {
-    candidateCategory,
-    skillMatches,
-    overallScore,
-    nlpScore: 0,
-    skillMatchScore: overallScore,
-    strengths: ['Basis analyse uitgevoerd'],
-    weaknesses: ['NLP analyse niet beschikbaar'],
-    recommendation: 'Handmatige beoordeling aanbevolen',
-    extractedSkills: extractSkillsFromText(combinedText),
-    nlpAnalysis: null,
-    communicationAnalysis: analyzeAudioCommunication(audioTranscript),
-    metadata: {
-      analysisMethod: 'Fallback',
-      processingTime: new Date().toISOString(),
-      confidence: 0.5
-    }
-  };
-};

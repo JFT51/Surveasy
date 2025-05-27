@@ -67,9 +67,7 @@ export const analyzeCVWithNLP = async (cvText, requiredSkills = []) => {
 
   } catch (error) {
     console.error('CV analysis error:', error);
-
-    // Fallback to basic analysis
-    return analyzeCVFallback(cvText, requiredSkills);
+    throw new Error(`CV analysis failed: ${error.message}. Please ensure all NLP services are available and try again.`);
   }
 };
 
@@ -675,33 +673,7 @@ const calculateAnalysisConfidence = ({ skills, experience, education }) => {
   return Math.round(confidence * 100) / 100;
 };
 
-/**
- * Fallback CV analysis
- */
-const analyzeCVFallback = (cvText, requiredSkills) => {
-  console.log('Using fallback CV analysis...');
 
-  return {
-    personalInfo: { name: 'Unknown', email: '', phone: '' },
-    skills: { skills: { technical: [], soft: [], tools: [], languages: [], frameworks: [], methodologies: [] } },
-    experience: { positions: [], totalYears: 0, achievements: [], seniority: 'Unknown', industries: [] },
-    education: { entries: [], highestLevel: 'unknown', relevantToTech: false },
-    languages: {},
-    skillMatching: { score: 0, matches: [], missing: requiredSkills || [] },
-    overallAssessment: {
-      overallScore: 0,
-      strengths: [],
-      improvements: ['NLP analysis niet beschikbaar'],
-      recommendation: 'Handmatige beoordeling vereist'
-    },
-    metadata: {
-      analysisMethod: 'Fallback',
-      processingTime: new Date().toISOString(),
-      textLength: cvText.length,
-      confidence: 0.3
-    }
-  };
-};
 
 /**
  * Enhanced work experience analysis using spaCy

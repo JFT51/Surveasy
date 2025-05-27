@@ -123,9 +123,7 @@ export const extractSkillsNLP = async (text) => {
 
   } catch (error) {
     console.error('Enhanced NLP skills extraction error:', error);
-
-    // Fallback to basic keyword matching
-    return extractSkillsFallback(text);
+    throw new Error(`NLP skills extraction failed: ${error.message}. Please ensure the NLP services are available.`);
   }
 };
 
@@ -491,54 +489,7 @@ const calculateOverallConfidence = (skills) => {
   return Math.round((totalConfidence / allSkills.length) * 100) / 100;
 };
 
-/**
- * Fallback skill extraction using basic keyword matching
- */
-const extractSkillsFallback = (text) => {
-  console.log('Using fallback skill extraction...');
 
-  const skills = {
-    technical: [],
-    soft: [],
-    tools: [],
-    languages: [],
-    frameworks: [],
-    methodologies: []
-  };
-
-  // Basic keyword matching as fallback
-  const allSkills = Object.values(DUTCH_SKILL_PATTERNS).flat();
-  const lowerText = text.toLowerCase();
-
-  allSkills.forEach(skill => {
-    if (lowerText.includes(skill.toLowerCase())) {
-      // Categorize skill
-      if (DUTCH_SKILL_PATTERNS.programming.includes(skill)) {
-        skills.languages.push({ name: skill, confidence: 0.7, category: 'languages' });
-      } else if (DUTCH_SKILL_PATTERNS.frameworks.includes(skill)) {
-        skills.frameworks.push({ name: skill, confidence: 0.7, category: 'frameworks' });
-      } else if (DUTCH_SKILL_PATTERNS.tools.includes(skill)) {
-        skills.tools.push({ name: skill, confidence: 0.7, category: 'tools' });
-      } else if (DUTCH_SKILL_PATTERNS.softSkills.includes(skill)) {
-        skills.soft.push({ name: skill, confidence: 0.7, category: 'soft' });
-      } else {
-        skills.technical.push({ name: skill, confidence: 0.7, category: 'technical' });
-      }
-    }
-  });
-
-  return {
-    skills,
-    experienceLevels: {},
-    entities: { nouns: [], verbs: [], adjectives: [], organizations: [], places: [] },
-    metadata: {
-      totalSkillsFound: Object.values(skills).flat().length,
-      textLength: text.length,
-      processingMethod: 'Fallback',
-      confidence: 0.7
-    }
-  };
-};
 
 /**
  * Convert spaCy skills format to our expected format
@@ -649,7 +600,7 @@ export const extractSkillsEnhanced = async (text) => {
     return nlpResult;
   } catch (error) {
     console.error('Enhanced skill extraction error:', error);
-    return extractSkillsFallback(text);
+    throw new Error(`Enhanced skill extraction failed: ${error.message}. Please ensure the NLP services are available.`);
   }
 };
 
