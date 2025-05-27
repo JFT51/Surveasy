@@ -3,7 +3,8 @@
 
 import { extractTextFromPDF, parseCV } from './pdfProcessor.js';
 import { analyzeCVWithNLP } from './cvAnalyzer.js';
-import { extractSkillsNLP } from './nlpProcessor.js';
+import { extractSkillsNLP, extractSkillsEnhanced } from './nlpProcessor.js';
+import { spacyService } from './spacyService.js';
 import { whisperService, formatTranscriptionResult } from './whisperService.js';
 import {
   analyzeCommunicationQuality,
@@ -266,10 +267,14 @@ Ik ben altijd bereid om nieuwe technologieën te leren en mijn vaardigheden verd
 
 export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, audioResult = null) => {
   try {
-    console.log('Starting advanced candidate analysis with NLP...');
+    console.log('Starting enhanced candidate analysis with spaCy + NLP...');
     console.log('Audio result metadata:', audioResult?.metadata);
 
-    // Use NLP for comprehensive CV analysis
+    // Check spaCy service availability
+    const spacyAvailable = await spacyService.checkAvailability();
+    console.log('spaCy service available:', spacyAvailable);
+
+    // Use enhanced NLP for comprehensive CV analysis (spaCy + compromise)
     const nlpAnalysis = await analyzeCVWithNLP(cvText, desiredSkills);
 
     // Analyze communication from audio transcript with metadata
@@ -423,9 +428,11 @@ export const analyzeCandidate = async (cvText, audioTranscript, desiredSkills, a
       },
       communicationAnalysis,
       metadata: {
-        analysisMethod: 'NLP Enhanced',
+        analysisMethod: spacyAvailable ? 'spaCy Dutch NLP Enhanced' : 'Compromise NLP Enhanced',
         processingTime: nlpAnalysis.metadata.processingTime,
-        confidence: nlpAnalysis.metadata.confidence
+        confidence: nlpAnalysis.metadata.confidence,
+        spacyEnhanced: spacyAvailable,
+        nlpMethod: nlpAnalysis.metadata.processingMethod
       }
     };
 

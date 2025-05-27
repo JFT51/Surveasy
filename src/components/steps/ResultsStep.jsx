@@ -11,6 +11,7 @@ import AnalysisCharts from '../results/AnalysisCharts';
 import DetailedSkills from '../results/DetailedSkills';
 import FullTextDisplay from '../results/FullTextDisplay';
 import WhisperDebugPanel from '../debug/WhisperDebugPanel';
+import SpacyDebugPanel from '../debug/SpacyDebugPanel';
 import AudioAnalysisResults from '../results/AudioAnalysisResults';
 
 const ResultsStep = () => {
@@ -67,6 +68,7 @@ const ResultsStep = () => {
     { id: 'ai-tools', label: 'AI Tools Status', icon: Brain },
     { id: 'full-text', label: 'Volledige Tekst', icon: Eye },
     { id: 'whisper-debug', label: 'Whisper Debug', icon: Settings },
+    { id: 'spacy-debug', label: 'spaCy Debug', icon: Brain },
     { id: 'details', label: 'Basis Details', icon: FileText }
   ];
 
@@ -248,6 +250,10 @@ const ResultsStep = () => {
 
       {activeTab === 'whisper-debug' && (
         <WhisperDebugPanel />
+      )}
+
+      {activeTab === 'spacy-debug' && (
+        <SpacyDebugPanel />
       )}
 
       {activeTab === 'details' && (

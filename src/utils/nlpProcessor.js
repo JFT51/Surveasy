@@ -1,8 +1,10 @@
 import nlp from 'compromise';
+import { spacyService, formatSpacyResult } from './spacyService.js';
 
 /**
  * Advanced NLP Processing for CV Analysis
  * Provides sophisticated text analysis, entity extraction, and skill matching
+ * Enhanced with spaCy Dutch NLP for superior analysis
  */
 
 // Dutch language mappings and patterns
@@ -99,48 +101,50 @@ const simpleStem = (word) => {
 };
 
 /**
- * Extract and analyze skills from CV text using NLP
+ * Extract and analyze skills from CV text using enhanced NLP
  * @param {string} text - The CV text to analyze
  * @returns {Object} - Analyzed skills with categories and confidence scores
  */
-export const extractSkillsNLP = (text) => {
+export const extractSkillsNLP = async (text) => {
   try {
-    console.log('Starting NLP skills extraction...');
+    console.log('Starting enhanced NLP skills extraction...');
     console.log('Input text length:', text.length);
 
-    // Normalize and clean text
-    const cleanText = normalizeText(text);
-    console.log('Normalized text length:', cleanText.length);
+    // Check if spaCy service is available
+    const spacyAvailable = await spacyService.checkAvailability();
 
-    // Use compromise for basic NLP analysis
-    const doc = nlp(cleanText);
+    if (spacyAvailable) {
+      console.log('Using spaCy Dutch NLP for advanced analysis');
+      return await extractSkillsWithSpacy(text);
+    } else {
+      console.log('spaCy not available, using compromise fallback');
+      return extractSkillsWithCompromise(text);
+    }
 
-    // Extract different types of entities
-    const entities = {
-      nouns: doc.nouns().out('array'),
-      verbs: doc.verbs().out('array'),
-      adjectives: doc.adjectives().out('array'),
-      organizations: doc.organizations().out('array'),
-      places: doc.places().out('array')
-    };
+  } catch (error) {
+    console.error('Enhanced NLP skills extraction error:', error);
 
-    // Extract skills by category
-    const extractedSkills = {
-      technical: extractTechnicalSkills(cleanText, entities),
-      soft: extractSoftSkills(cleanText, entities),
-      tools: extractTools(cleanText, entities),
-      languages: extractProgrammingLanguages(cleanText, entities),
-      frameworks: extractFrameworks(cleanText, entities),
-      methodologies: extractMethodologies(cleanText, entities)
-    };
+    // Fallback to basic keyword matching
+    return extractSkillsFallback(text);
+  }
+};
 
-    // Calculate confidence scores
-    const skillsWithConfidence = calculateConfidenceScores(extractedSkills, cleanText);
+/**
+ * Extract skills using spaCy Dutch NLP service
+ */
+const extractSkillsWithSpacy = async (text) => {
+  try {
+    // Get comprehensive analysis from spaCy
+    const spacyResult = await spacyService.analyzeText(text);
+    const formattedResult = formatSpacyResult(spacyResult);
 
-    // Extract experience levels
-    const experienceLevels = extractExperienceLevels(cleanText, skillsWithConfidence);
+    // Convert spaCy skills format to our expected format
+    const skillsWithConfidence = convertSpacySkills(formattedResult.skills);
 
-    console.log('NLP skills extraction completed');
+    // Extract experience levels using spaCy entities and analysis
+    const experienceLevels = extractExperienceLevelsFromSpacy(spacyResult);
+
+    console.log('spaCy NLP skills extraction completed');
     console.log('Total skills found:', Object.values(skillsWithConfidence).flat().length);
     console.log('Skills by category:', Object.keys(skillsWithConfidence).map(cat =>
       `${cat}: ${skillsWithConfidence[cat].length}`
@@ -149,21 +153,74 @@ export const extractSkillsNLP = (text) => {
     return {
       skills: skillsWithConfidence,
       experienceLevels,
-      entities,
+      entities: formattedResult.entities,
+      spacyAnalysis: formattedResult, // Include full spaCy analysis
       metadata: {
         totalSkillsFound: Object.values(skillsWithConfidence).flat().length,
-        textLength: cleanText.length,
-        processingMethod: 'NLP',
-        confidence: calculateOverallConfidence(skillsWithConfidence)
+        textLength: text.length,
+        processingMethod: 'spaCy Dutch NLP',
+        confidence: formattedResult.metadata.confidence,
+        sentiment: formattedResult.sentiment,
+        complexity: spacyResult.syntax.complexity_score
       }
     };
 
   } catch (error) {
-    console.error('NLP skills extraction error:', error);
-
-    // Fallback to basic keyword matching
-    return extractSkillsFallback(text);
+    console.error('spaCy skills extraction error:', error);
+    throw error;
   }
+};
+
+/**
+ * Extract skills using compromise (fallback method)
+ */
+const extractSkillsWithCompromise = (text) => {
+  // Normalize and clean text
+  const cleanText = normalizeText(text);
+  console.log('Normalized text length:', cleanText.length);
+
+  // Use compromise for basic NLP analysis
+  const doc = nlp(cleanText);
+
+  // Extract different types of entities
+  const entities = {
+    nouns: doc.nouns().out('array'),
+    verbs: doc.verbs().out('array'),
+    adjectives: doc.adjectives().out('array'),
+    organizations: doc.organizations().out('array'),
+    places: doc.places().out('array')
+  };
+
+  // Extract skills by category
+  const extractedSkills = {
+    technical: extractTechnicalSkills(cleanText, entities),
+    soft: extractSoftSkills(cleanText, entities),
+    tools: extractTools(cleanText, entities),
+    languages: extractProgrammingLanguages(cleanText, entities),
+    frameworks: extractFrameworks(cleanText, entities),
+    methodologies: extractMethodologies(cleanText, entities)
+  };
+
+  // Calculate confidence scores
+  const skillsWithConfidence = calculateConfidenceScores(extractedSkills, cleanText);
+
+  // Extract experience levels
+  const experienceLevels = extractExperienceLevels(cleanText, skillsWithConfidence);
+
+  console.log('Compromise NLP skills extraction completed');
+  console.log('Total skills found:', Object.values(skillsWithConfidence).flat().length);
+
+  return {
+    skills: skillsWithConfidence,
+    experienceLevels,
+    entities,
+    metadata: {
+      totalSkillsFound: Object.values(skillsWithConfidence).flat().length,
+      textLength: cleanText.length,
+      processingMethod: 'Compromise NLP',
+      confidence: calculateOverallConfidence(skillsWithConfidence)
+    }
+  };
 };
 
 /**
@@ -481,4 +538,155 @@ const extractSkillsFallback = (text) => {
       confidence: 0.7
     }
   };
+};
+
+/**
+ * Convert spaCy skills format to our expected format
+ */
+const convertSpacySkills = (spacySkills) => {
+  const convertedSkills = {
+    technical: [],
+    soft: [],
+    tools: [],
+    languages: [],
+    frameworks: [],
+    methodologies: []
+  };
+
+  // Map spaCy categories to our categories
+  const categoryMapping = {
+    programming_languages: 'languages',
+    frameworks: 'frameworks',
+    databases: 'technical',
+    cloud_platforms: 'technical',
+    tools: 'tools',
+    methodologies: 'methodologies',
+    soft_skills: 'soft',
+    languages: 'soft' // Human languages go to soft skills
+  };
+
+  Object.entries(spacySkills).forEach(([spacyCategory, skills]) => {
+    const ourCategory = categoryMapping[spacyCategory] || 'technical';
+
+    skills.forEach(skill => {
+      convertedSkills[ourCategory].push({
+        name: skill.name,
+        confidence: skill.confidence,
+        category: ourCategory,
+        source: 'spaCy',
+        context: skill.context,
+        position: skill.position
+      });
+    });
+  });
+
+  return convertedSkills;
+};
+
+/**
+ * Extract experience levels from spaCy analysis
+ */
+const extractExperienceLevelsFromSpacy = (spacyResult) => {
+  const experienceLevels = {};
+
+  // Use spaCy's experience extraction
+  if (spacyResult.experience && spacyResult.experience.length > 0) {
+    spacyResult.experience.forEach(exp => {
+      if (exp.type === 'duration') {
+        // Extract years from experience text
+        const yearMatch = exp.text.match(/(\d+)\s*(jaar|jaren)/);
+        if (yearMatch) {
+          const years = parseInt(yearMatch[1]);
+          experienceLevels['general'] = years;
+        }
+      }
+    });
+  }
+
+  return experienceLevels;
+};
+
+/**
+ * Enhanced skill extraction with spaCy integration
+ * @param {string} text - Text to analyze
+ * @returns {Object} - Enhanced skills analysis
+ */
+export const extractSkillsEnhanced = async (text) => {
+  try {
+    // Get basic NLP analysis
+    const nlpResult = await extractSkillsNLP(text);
+
+    // If spaCy was used, we already have enhanced analysis
+    if (nlpResult.metadata.processingMethod === 'spaCy Dutch NLP') {
+      return nlpResult;
+    }
+
+    // Otherwise, try to enhance with spaCy if available
+    const spacyAvailable = await spacyService.checkAvailability();
+    if (spacyAvailable) {
+      try {
+        const spacySkills = await spacyService.extractSkills(text);
+        const convertedSpacySkills = convertSpacySkills(spacySkills);
+
+        // Merge spaCy skills with existing analysis
+        const mergedSkills = mergeSkillAnalysis(nlpResult.skills, convertedSpacySkills);
+
+        return {
+          ...nlpResult,
+          skills: mergedSkills,
+          metadata: {
+            ...nlpResult.metadata,
+            processingMethod: 'Enhanced NLP + spaCy',
+            spacyEnhanced: true
+          }
+        };
+      } catch (spacyError) {
+        console.warn('spaCy enhancement failed:', spacyError);
+        return nlpResult;
+      }
+    }
+
+    return nlpResult;
+  } catch (error) {
+    console.error('Enhanced skill extraction error:', error);
+    return extractSkillsFallback(text);
+  }
+};
+
+/**
+ * Merge skills from different analysis methods
+ */
+const mergeSkillAnalysis = (baseSkills, spacySkills) => {
+  const merged = { ...baseSkills };
+
+  Object.entries(spacySkills).forEach(([category, skills]) => {
+    if (!merged[category]) {
+      merged[category] = [];
+    }
+
+    skills.forEach(skill => {
+      // Check if skill already exists
+      const exists = merged[category].some(existing =>
+        existing.name.toLowerCase() === skill.name.toLowerCase()
+      );
+
+      if (!exists) {
+        merged[category].push(skill);
+      } else {
+        // Update confidence if spaCy has higher confidence
+        const existingIndex = merged[category].findIndex(existing =>
+          existing.name.toLowerCase() === skill.name.toLowerCase()
+        );
+        if (skill.confidence > merged[category][existingIndex].confidence) {
+          merged[category][existingIndex] = {
+            ...merged[category][existingIndex],
+            confidence: skill.confidence,
+            source: 'spaCy Enhanced'
+          };
+        }
+      }
+    });
+  });
+
+  return merged;
 };

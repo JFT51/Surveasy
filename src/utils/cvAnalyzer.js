@@ -1,5 +1,6 @@
 import nlp from 'compromise';
-import { extractSkillsNLP } from './nlpProcessor.js';
+import { extractSkillsNLP, extractSkillsEnhanced } from './nlpProcessor.js';
+import { spacyService } from './spacyService.js';
 
 /**
  * Advanced CV Analysis using NLP
@@ -7,26 +8,26 @@ import { extractSkillsNLP } from './nlpProcessor.js';
  */
 
 /**
- * Analyze complete CV using NLP techniques
+ * Analyze complete CV using enhanced NLP techniques
  * @param {string} cvText - The extracted CV text
  * @param {Array} requiredSkills - Skills required for the position
  * @returns {Object} - Comprehensive CV analysis
  */
-export const analyzeCVWithNLP = (cvText, requiredSkills = []) => {
+export const analyzeCVWithNLP = async (cvText, requiredSkills = []) => {
   try {
-    console.log('Starting comprehensive CV analysis with NLP...');
+    console.log('Starting comprehensive CV analysis with enhanced NLP...');
 
-    // Extract skills using advanced NLP
-    const skillsAnalysis = extractSkillsNLP(cvText);
+    // Extract skills using enhanced NLP (spaCy + compromise)
+    const skillsAnalysis = await extractSkillsEnhanced(cvText);
 
-    // Analyze work experience
-    const experienceAnalysis = analyzeWorkExperience(cvText);
+    // Analyze work experience (enhanced with spaCy if available)
+    const experienceAnalysis = await analyzeWorkExperienceEnhanced(cvText, skillsAnalysis.spacyAnalysis);
 
-    // Analyze education
-    const educationAnalysis = analyzeEducation(cvText);
+    // Analyze education (enhanced with spaCy if available)
+    const educationAnalysis = await analyzeEducationEnhanced(cvText, skillsAnalysis.spacyAnalysis);
 
-    // Extract personal information
-    const personalInfo = extractPersonalInfo(cvText);
+    // Extract personal information (enhanced with spaCy entities)
+    const personalInfo = await extractPersonalInfoEnhanced(cvText, skillsAnalysis.spacyAnalysis);
 
     // Analyze language proficiency
     const languageAnalysis = analyzeLanguages(cvText);
@@ -700,4 +701,140 @@ const analyzeCVFallback = (cvText, requiredSkills) => {
       confidence: 0.3
     }
   };
+};
+
+/**
+ * Enhanced work experience analysis using spaCy
+ */
+const analyzeWorkExperienceEnhanced = async (text, spacyAnalysis) => {
+  // Start with basic analysis
+  const basicAnalysis = analyzeWorkExperience(text);
+
+  // Enhance with spaCy if available
+  if (spacyAnalysis && spacyAnalysis.entities) {
+    // Extract organizations from spaCy entities
+    const organizations = spacyAnalysis.entities.organizations || [];
+    const dates = spacyAnalysis.entities.dates || [];
+
+    // Add organizations to experience
+    organizations.forEach(org => {
+      const existingPosition = basicAnalysis.positions.find(pos =>
+        pos.company.toLowerCase().includes(org.text.toLowerCase())
+      );
+
+      if (!existingPosition) {
+        basicAnalysis.positions.push({
+          title: 'Unknown',
+          company: org.text,
+          duration: 'Unknown',
+          description: `Extracted from spaCy: ${org.text}`,
+          source: 'spaCy'
+        });
+      }
+    });
+
+    // Enhance with spaCy experience data
+    if (spacyAnalysis.experience) {
+      spacyAnalysis.experience.forEach(exp => {
+        if (exp.type === 'duration') {
+          const yearMatch = exp.text.match(/(\d+)\s*(jaar|jaren)/);
+          if (yearMatch) {
+            const years = parseInt(yearMatch[1]);
+            basicAnalysis.totalYears = Math.max(basicAnalysis.totalYears, years);
+          }
+        }
+      });
+    }
+  }
+
+  return basicAnalysis;
+};
+
+/**
+ * Enhanced education analysis using spaCy
+ */
+const analyzeEducationEnhanced = async (text, spacyAnalysis) => {
+  // Start with basic analysis
+  const basicAnalysis = analyzeEducation(text);
+
+  // Enhance with spaCy if available
+  if (spacyAnalysis && spacyAnalysis.entities) {
+    // Extract organizations that might be educational institutions
+    const organizations = spacyAnalysis.entities.organizations || [];
+
+    organizations.forEach(org => {
+      const orgText = org.text.toLowerCase();
+      const isEducational = ['universiteit', 'hogeschool', 'university', 'college', 'school'].some(keyword =>
+        orgText.includes(keyword)
+      );
+
+      if (isEducational) {
+        const existingEntry = basicAnalysis.entries.find(entry =>
+          entry.institution && entry.institution.toLowerCase().includes(orgText)
+        );
+
+        if (!existingEntry) {
+          basicAnalysis.entries.push({
+            degree: 'Unknown',
+            field: 'Unknown',
+            institution: org.text,
+            source: 'spaCy'
+          });
+        }
+      }
+    });
+
+    // Enhance with spaCy education data
+    if (spacyAnalysis.education) {
+      spacyAnalysis.education.forEach(edu => {
+        if (edu.type === 'education_keyword') {
+          // Add education keywords as potential degrees
+          const keyword = edu.text.toLowerCase();
+          if (['bachelor', 'master', 'phd', 'hbo', 'wo', 'mbo'].includes(keyword)) {
+            const existingEntry = basicAnalysis.entries.find(entry =>
+              entry.degree.toLowerCase().includes(keyword)
+            );
+
+            if (!existingEntry) {
+              basicAnalysis.entries.push({
+                degree: edu.text,
+                field: 'Unknown',
+                institution: 'Unknown',
+                source: 'spaCy'
+              });
+            }
+          }
+        }
+      });
+    }
+  }
+
+  return basicAnalysis;
+};
+
+/**
+ * Enhanced personal information extraction using spaCy
+ */
+const extractPersonalInfoEnhanced = async (text, spacyAnalysis) => {
+  // Start with basic extraction
+  const basicInfo = extractPersonalInfo(text);
+
+  // Enhance with spaCy entities if available
+  if (spacyAnalysis && spacyAnalysis.entities) {
+    // Extract person names
+    const persons = spacyAnalysis.entities.persons || [];
+    if (persons.length > 0 && !basicInfo.name) {
+      // Use the first person name found
+      basicInfo.name = persons[0].text;
+      basicInfo.source = 'spaCy';
+    }
+
+    // Extract locations
+    const locations = spacyAnalysis.entities.locations || [];
+    if (locations.length > 0) {
+      basicInfo.location = locations[0].text;
+    }
+  }
+
+  return basicInfo;
 };
