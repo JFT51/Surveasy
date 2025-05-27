@@ -8,8 +8,9 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "build:netlify": "npm run build",
-    "start": "vite preview --port 3000"
+    "build:netlify": "vite build --mode production",
+    "start": "vite preview --port 3000",
+    "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
     "chart.js": "^4.4.9",

@@ -1,13 +1,13 @@
-# Netlify Configuration for Surveasy
+# Netlify Configuration for Surveasy React App
 [build]
   # Build command for Vite React app
-  command = "npm run build"
-  
+  command = "npm ci && npm run build"
+
   # Directory containing the built app
   publish = "dist"
-  
-  # Node.js version
-  environment = { NODE_VERSION = "18" }
+
+  # Node.js version and build environment
+  environment = { NODE_VERSION = "18", NPM_FLAGS = "--production=false" }
 
 # Redirect rules for SPA (Single Page Application)
 [[redirects]]
@@ -17,12 +17,17 @@
 
 # Environment variables for production
 [build.environment]
-  # Whisper service URL (will be demo mode on Netlify)
+  # React/Vite specific variables
   VITE_WHISPER_SERVICE_URL = ""
   VITE_APP_NAME = "Surveasy"
   VITE_APP_VERSION = "1.0.0"
   VITE_DEBUG_MODE = "false"
   VITE_ENABLE_LOGGING = "false"
+  VITE_DEMO_MODE = "true"
+
+  # Build environment
+  NODE_ENV = "production"
+  CI = "true"
 
 # Headers for security and performance
 [[headers]]
