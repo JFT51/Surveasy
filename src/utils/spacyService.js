@@ -76,11 +76,6 @@ export class SpacyService {
    * @returns {Promise<Object>} - Comprehensive NLP analysis results
    */
   async analyzeText(text) {
-    if (this.isDemoMode) {
-      console.log('Demo mode: Using fallback NLP analysis');
-      return this.getDemoAnalysis(text);
-    }
-
     if (!this.isAvailable) {
       throw new Error('spaCy service is not available');
     }

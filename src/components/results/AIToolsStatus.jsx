@@ -17,10 +17,20 @@ const AIToolsStatus = ({ analysisData }) => {
         name: 'NLP Skill Extraction',
         category: 'Skills Analysis',
         status: 'active',
-        description: 'Compromise.js for semantic skill understanding',
+        description: analysisData?.metadata?.spacyEnhanced ? 'spaCy Dutch NLP + Compromise.js hybrid analysis' : 'Compromise.js for semantic skill understanding',
         dataSource: 'real',
         confidence: analysisData?.nlpAnalysis?.confidence || 0.85,
         icon: Brain
+      },
+      {
+        name: 'spaCy Dutch NLP',
+        category: 'Advanced NLP',
+        status: 'active',
+        description: 'Named entity recognition, sentiment analysis, and advanced Dutch language processing',
+        dataSource: 'real',
+        confidence: analysisData?.metadata?.spacyEnhanced ? (analysisData?.metadata?.confidence || 0.9) : 0.0,
+        icon: Brain,
+        isSpacyEnhanced: analysisData?.metadata?.spacyEnhanced || false
       },
       {
         name: 'CV Structure Parser',
@@ -61,14 +71,6 @@ const AIToolsStatus = ({ analysisData }) => {
     ],
     planned: [
       {
-        name: 'spaCy Dutch NLP',
-        category: 'Advanced NLP',
-        status: 'planned',
-        description: 'Named entity recognition and advanced language processing',
-        expectedImplementation: 'Q2 2024',
-        icon: Brain
-      },
-      {
         name: 'Computer Vision OCR',
         category: 'Document Processing',
         status: 'planned',
@@ -77,10 +79,10 @@ const AIToolsStatus = ({ analysisData }) => {
         icon: FileText
       },
       {
-        name: 'Sentiment Analysis',
+        name: 'Advanced Sentiment Analysis',
         category: 'Communication Analysis',
         status: 'planned',
-        description: 'Emotional tone and communication style analysis',
+        description: 'Deep emotional tone and communication style analysis with ML models',
         expectedImplementation: 'Q3 2024',
         icon: Brain
       }
@@ -176,20 +178,40 @@ const AIToolsStatus = ({ analysisData }) => {
                   <div className="flex items-center">
                     <Icon className="w-6 h-6 text-green-600 mr-3" />
                     <div>
-                      <h5 className="text-xl font-semibold text-neutral-900">{tool.name}</h5>
+                      <h5 className="text-xl font-semibold text-neutral-900">
+                        {tool.name}
+                        {tool.isSpacyEnhanced && (
+                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            Enhanced
+                          </span>
+                        )}
+                      </h5>
                       <p className="text-sm text-green-700 font-medium">{tool.category}</p>
                     </div>
                   </div>
                   {getStatusBadge(tool.status)}
                 </div>
                 <p className="text-neutral-700 mb-4">{tool.description}</p>
-                {tool.confidence && (
+                {tool.confidence !== undefined && (
                   <div className="mb-2">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-neutral-600">Betrouwbaarheid</span>
-                      <span className="font-medium">{Math.round(tool.confidence * 100)}%</span>
+                      <span className="font-medium">
+                        {tool.confidence === 0 ? 'Service niet beschikbaar' : `${Math.round(tool.confidence * 100)}%`}
+                      </span>
                     </div>
-                    {getConfidenceBar(tool.confidence)}
+                    {tool.confidence === 0 ? (
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="h-2 rounded-full bg-gray-400" style={{ width: '100%' }}></div>
+                      </div>
+                    ) : (
+                      getConfidenceBar(tool.confidence)
+                    )}
+                    {tool.confidence === 0 && tool.name === 'spaCy Dutch NLP' && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        Start de spaCy service op poort 5001 voor geavanceerde NLP analyse
+                      </p>
+                    )}
                   </div>
                 )}
                 <div className="flex items-center text-sm">
