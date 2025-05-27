@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, Zap, AlertTriangle, Database, Brain, FileText, Mic } from 'lucide-react';
+import { CheckCircle, Clock, Zap, AlertTriangle, Database, Brain, FileText, Mic, MessageSquare, Users, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
 const AIToolsStatus = ({ analysisData }) => {
   const aiTools = {
@@ -67,6 +67,51 @@ const AIToolsStatus = ({ analysisData }) => {
         dataSource: 'real',
         confidence: analysisData?.metadata?.isRealTranscription ? 0.9 : 0.0,
         icon: Mic
+      },
+      {
+        name: 'Audio Transcript Analysis',
+        category: 'Communication Skills',
+        status: 'active',
+        description: 'Communication quality, personality traits, and leadership skills analysis',
+        dataSource: 'real',
+        confidence: analysisData?.communicationAnalysis?.analysisMetadata?.enhancedAnalysis ? 0.85 : 0.0,
+        icon: MessageSquare
+      },
+      {
+        name: 'Sentiment Analysis',
+        category: 'Text Analysis',
+        status: 'active',
+        description: analysisData?.metadata?.spacyEnhanced ? 'spaCy-powered sentiment analysis for Dutch text' : 'Basic sentiment analysis',
+        dataSource: 'real',
+        confidence: analysisData?.metadata?.spacyEnhanced ? 0.8 : 0.6,
+        icon: Brain
+      },
+      {
+        name: 'Experience Level Detection',
+        category: 'Skills Analysis',
+        status: 'active',
+        description: 'Automatic detection of beginner/intermediate/expert skill levels',
+        dataSource: 'real',
+        confidence: 0.75,
+        icon: TrendingUp
+      },
+      {
+        name: 'Named Entity Recognition',
+        category: 'Information Extraction',
+        status: 'active',
+        description: analysisData?.metadata?.spacyEnhanced ? 'spaCy-powered extraction of persons, organizations, locations' : 'Basic entity extraction',
+        dataSource: 'real',
+        confidence: analysisData?.metadata?.spacyEnhanced ? 0.9 : 0.6,
+        icon: Users
+      },
+      {
+        name: 'CV Structure Parser',
+        category: 'Document Processing',
+        status: 'active',
+        description: 'Intelligent parsing of CV sections: experience, education, skills, contact info',
+        dataSource: 'real',
+        confidence: 0.8,
+        icon: FileText
       }
     ],
     planned: [
@@ -74,37 +119,25 @@ const AIToolsStatus = ({ analysisData }) => {
         name: 'Computer Vision OCR',
         category: 'Document Processing',
         status: 'planned',
-        description: 'Scanned document and image text extraction',
+        description: 'Scanned document and image text extraction for non-text PDFs',
         expectedImplementation: 'Q3 2024',
         icon: FileText
       },
       {
-        name: 'Advanced Sentiment Analysis',
-        category: 'Communication Analysis',
+        name: 'Advanced ML Models',
+        category: 'Enhanced AI',
         status: 'planned',
-        description: 'Deep emotional tone and communication style analysis with ML models',
-        expectedImplementation: 'Q3 2024',
+        description: 'Custom trained models for Dutch CV analysis and candidate scoring',
+        expectedImplementation: 'Q4 2024',
         icon: Brain
-      }
-    ],
-    mockData: [
-      {
-        name: 'Audio Transcript Analysis',
-        category: 'Communication Skills',
-        status: 'mock',
-        description: 'Currently using simulated audio analysis',
-        realImplementation: 'Whisper API integration planned',
-        icon: Mic,
-        mockReason: 'Audio transcription API not yet integrated'
       },
       {
-        name: 'Advanced Personality Assessment',
-        category: 'Psychological Analysis',
-        status: 'mock',
-        description: 'Personality traits and cultural fit assessment',
-        realImplementation: 'ML model training in progress',
-        icon: Brain,
-        mockReason: 'Requires large dataset for training'
+        name: 'Real-time Video Analysis',
+        category: 'Video Processing',
+        status: 'planned',
+        description: 'Video interview analysis with facial expression and gesture recognition',
+        expectedImplementation: 'Q1 2025',
+        icon: Mic
       }
     ]
   };
@@ -258,44 +291,7 @@ const AIToolsStatus = ({ analysisData }) => {
         </div>
       </div>
 
-      {/* Mock Data Tools */}
-      <div>
-        <h4 className="text-2xl font-semibold text-yellow-700 mb-6 flex items-center">
-          <Zap className="w-6 h-6 mr-3" />
-          Demo Data Tools ({aiTools.mockData.length})
-        </h4>
-        <div className="grid gap-4">
-          {aiTools.mockData.map((tool, index) => {
-            const Icon = tool.icon;
-            return (
-              <div key={index} className="border border-yellow-200 rounded-lg p-6 bg-yellow-50">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <Icon className="w-6 h-6 text-yellow-600 mr-3" />
-                    <div>
-                      <h5 className="text-xl font-semibold text-neutral-900">{tool.name}</h5>
-                      <p className="text-sm text-yellow-700 font-medium">{tool.category}</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(tool.status)}
-                </div>
-                <p className="text-neutral-700 mb-4">{tool.description}</p>
-                <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Demo Reden:</strong> {tool.mockReason}
-                  </p>
-                </div>
-                <div className="flex items-center text-sm">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600 mr-2" />
-                  <span className="text-yellow-700 font-medium">
-                    Echte implementatie: {tool.realImplementation}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* Summary Stats */}
       <div className="mt-10 p-6 bg-neutral-100 rounded-lg">
@@ -314,10 +310,10 @@ const AIToolsStatus = ({ analysisData }) => {
             <p className="text-neutral-700">Geplande Tools</p>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600 mb-2">
-              {aiTools.mockData.length}
+            <div className="text-3xl font-bold text-purple-600 mb-2">
+              {Math.round((aiTools.implemented.length / (aiTools.implemented.length + aiTools.planned.length)) * 100)}%
             </div>
-            <p className="text-neutral-700">Demo Data Tools</p>
+            <p className="text-neutral-700">Implementatie Voortgang</p>
           </div>
         </div>
       </div>
