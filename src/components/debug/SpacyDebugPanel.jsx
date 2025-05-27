@@ -192,82 +192,79 @@ Talen:
   );
 
   const renderTestInterface = () => (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Test spaCy Analysis
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Test Text (Dutch CV Content)
-            </label>
-            <textarea
-              value={testText}
-              onChange={(e) => setTestText(e.target.value)}
-              className="w-full h-40 p-3 border rounded-md resize-none"
-              placeholder="Enter Dutch text to analyze..."
-            />
-          </div>
+    <div className="card mb-6">
+      <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+        <FileText className="h-5 w-5" />
+        Test spaCy Analysis
+      </h3>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={analyzeText}
-              disabled={analysis.loading || !serviceStatus.available}
-              className="flex items-center gap-2"
-            >
-              {analysis.loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <BarChart3 className="h-4 w-4" />
-              )}
-              Full Analysis
-            </Button>
-
-            <Button
-              onClick={extractSkills}
-              disabled={analysis.loading || !serviceStatus.available}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              {analysis.loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Target className="h-4 w-4" />
-              )}
-              Extract Skills Only
-            </Button>
-          </div>
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Test Text (Dutch CV Content)
+          </label>
+          <textarea
+            value={testText}
+            onChange={(e) => setTestText(e.target.value)}
+            className="w-full h-40 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter Dutch text to analyze..."
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="flex gap-2">
+          <button
+            onClick={analyzeText}
+            disabled={analysis.loading || !serviceStatus.available}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+          >
+            {analysis.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <BarChart3 className="h-4 w-4" />
+            )}
+            Full Analysis
+          </button>
+
+          <button
+            onClick={extractSkills}
+            disabled={analysis.loading || !serviceStatus.available}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:bg-gray-100"
+          >
+            {analysis.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Target className="h-4 w-4" />
+            )}
+            Extract Skills Only
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   const renderAnalysisResults = () => {
     if (analysis.loading) {
       return (
-        <Card>
-          <CardContent className="flex items-center justify-center py-8">
+        <div className="card">
+          <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               <span>Analyzing with spaCy...</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       );
     }
 
     if (analysis.error) {
       return (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            Analysis Error: {analysis.error}
-          </AlertDescription>
-        </Alert>
+        <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <div>
+            <p className="font-medium text-red-800">Analysis Error</p>
+            <p className="text-sm text-red-600">{analysis.error}</p>
+          </div>
+        </div>
       );
     }
 
@@ -285,170 +282,152 @@ Talen:
   };
 
   const renderSkillsResults = (skills) => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          Extracted Skills
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {Object.entries(skills).map(([category, skillList]) => (
-            <div key={category} className="space-y-2">
-              <h4 className="font-medium capitalize">
-                {category.replace('_', ' ')} ({skillList.length})
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {skillList.map((skill, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {skill.name} ({Math.round(skill.confidence * 100)}%)
-                  </Badge>
-                ))}
-              </div>
+    <div className="card">
+      <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+        <Target className="h-5 w-5" />
+        Extracted Skills
+      </h3>
+
+      <div className="space-y-4">
+        {Object.entries(skills).map(([category, skillList]) => (
+          <div key={category} className="space-y-2">
+            <h4 className="font-medium capitalize">
+              {category.replace('_', ' ')} ({skillList.length})
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {skillList.map((skill, index) => (
+                <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  {skill.name} ({Math.round(skill.confidence * 100)}%)
+                </span>
+              ))}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 
   const renderFullAnalysisResults = (result) => (
     <div className="space-y-4">
       {/* Skills Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Skills Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(result.skills).map(([category, skillList]) => (
-              <div key={category} className="space-y-2">
-                <h4 className="font-medium capitalize">
-                  {category.replace('_', ' ')} ({skillList.length})
-                </h4>
-                <div className="space-y-1">
-                  {skillList.slice(0, 5).map((skill, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>{skill.name}</span>
-                      <span className="text-gray-500">
-                        {Math.round(skill.confidence * 100)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
+      <div className="card">
+        <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+          <Target className="h-5 w-5" />
+          Skills Analysis
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Object.entries(result.skills).map(([category, skillList]) => (
+            <div key={category} className="space-y-2">
+              <h4 className="font-medium capitalize">
+                {category.replace('_', ' ')} ({skillList.length})
+              </h4>
+              <div className="space-y-1">
+                {skillList.slice(0, 5).map((skill, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{skill.name}</span>
+                    <span className="text-gray-500">
+                      {Math.round(skill.confidence * 100)}%
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Entities */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Named Entities
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(result.entities).map(([type, entities]) => (
-              <div key={type} className="space-y-2">
-                <h4 className="font-medium capitalize">{type}</h4>
-                <div className="space-y-1">
-                  {entities.slice(0, 3).map((entity, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {entity.text}
-                    </Badge>
-                  ))}
-                </div>
+      <div className="card">
+        <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Named Entities
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Object.entries(result.entities).map(([type, entities]) => (
+            <div key={type} className="space-y-2">
+              <h4 className="font-medium capitalize">{type}</h4>
+              <div className="space-y-1">
+                {entities.slice(0, 3).map((entity, index) => (
+                  <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                    {entity.text}
+                  </span>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Text Statistics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{result.statistics.word_count}</div>
-              <div className="text-sm text-gray-500">Words</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{result.statistics.sentence_count}</div>
-              <div className="text-sm text-gray-500">Sentences</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{result.statistics.unique_words}</div>
-              <div className="text-sm text-gray-500">Unique Words</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                {Math.round(result.statistics.lexical_diversity * 100)}%
-              </div>
-              <div className="text-sm text-gray-500">Diversity</div>
-            </div>
+      <div className="card">
+        <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          Text Statistics
+        </h3>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold">{result.statistics.word_count}</div>
+            <div className="text-sm text-gray-500">Words</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{result.statistics.sentence_count}</div>
+            <div className="text-sm text-gray-500">Sentences</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{result.statistics.unique_words}</div>
+            <div className="text-sm text-gray-500">Unique Words</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">
+              {Math.round(result.statistics.lexical_diversity * 100)}%
+            </div>
+            <div className="text-sm text-gray-500">Diversity</div>
+          </div>
+        </div>
+      </div>
 
       {/* Sentiment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Sentiment Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>Overall Sentiment:</span>
-              <Badge variant={
-                result.sentiment.overall === 'positive' ? 'default' :
-                result.sentiment.overall === 'negative' ? 'destructive' : 'secondary'
-              }>
-                {result.sentiment.overall}
-              </Badge>
-            </div>
-            <div className="flex justify-between">
-              <span>Sentiment Score:</span>
-              <span>{Math.round(result.sentiment.score * 100)}%</span>
-            </div>
+      <div className="card">
+        <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          Sentiment Analysis
+        </h3>
+
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span>Overall Sentiment:</span>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+              result.sentiment.overall === 'positive' ? 'bg-green-100 text-green-800' :
+              result.sentiment.overall === 'negative' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+            }`}>
+              {result.sentiment.overall}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex justify-between">
+            <span>Sentiment Score:</span>
+            <span>{Math.round(result.sentiment.score * 100)}%</span>
+          </div>
+        </div>
+      </div>
 
       {/* Processing Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Processing Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            <div><strong>Model:</strong> {result.processing_info.model}</div>
-            <div><strong>Language:</strong> {result.processing_info.language}</div>
-            <div><strong>Tokens:</strong> {result.processing_info.tokens}</div>
-            <div><strong>Sentences:</strong> {result.processing_info.sentences}</div>
-            <div><strong>Processed:</strong> {new Date(result.processing_info.timestamp).toLocaleString()}</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="card">
+        <h3 className="text-xl font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+          <Lightbulb className="h-5 w-5" />
+          Processing Information
+        </h3>
+
+        <div className="space-y-2 text-sm">
+          <div><strong>Model:</strong> {result.processing_info.model}</div>
+          <div><strong>Language:</strong> {result.processing_info.language}</div>
+          <div><strong>Tokens:</strong> {result.processing_info.tokens}</div>
+          <div><strong>Sentences:</strong> {result.processing_info.sentences}</div>
+          <div><strong>Processed:</strong> {new Date(result.processing_info.timestamp).toLocaleString()}</div>
+        </div>
+      </div>
     </div>
   );
 
