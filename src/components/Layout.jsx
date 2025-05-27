@@ -93,22 +93,10 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-16">
+      <main className="max-w-6xl mx-auto px-6 lg:px-8 py-16 pb-24">
         <DemoNotice />
         {children}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-neutral-200 mt-auto">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-neutral-900 mb-2">Surveasy</h3>
-            <p className="text-lg text-neutral-600">
-              © 2024 Surveasy - AI Talent Analysis Platform
-            </p>
-          </div>
-        </div>
-      </footer>
 
       {/* Notification System */}
       <NotificationSystem />

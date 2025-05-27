@@ -73,17 +73,35 @@ function appReducer(state, action) {
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Enhanced setStep with scroll to top
+  const setStepWithScroll = (step) => {
+    dispatch({ type: 'SET_STEP', payload: step });
+    // Small delay to ensure DOM updates before scrolling
+    setTimeout(() => {
+      scrollToTop();
+    }, 100);
+  };
+
   const value = {
     state,
     dispatch,
     // Helper functions
-    setStep: (step) => dispatch({ type: 'SET_STEP', payload: step }),
+    setStep: setStepWithScroll,
     setFiles: (files) => dispatch({ type: 'SET_FILES', payload: files }),
     setDesiredSkills: (skills) => dispatch({ type: 'SET_DESIRED_SKILLS', payload: skills }),
     setExtractedData: (data) => dispatch({ type: 'SET_EXTRACTED_DATA', payload: data }),
     setAnalysis: (analysis) => dispatch({ type: 'SET_ANALYSIS', payload: analysis }),
     setProcessing: (processing) => dispatch({ type: 'SET_PROCESSING', payload: processing }),
-    resetApp: () => dispatch({ type: 'RESET_APP' })
+    resetApp: () => dispatch({ type: 'RESET_APP' }),
+    scrollToTop
   };
 
   return (
