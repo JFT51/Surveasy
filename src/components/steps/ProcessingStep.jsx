@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { FileText, Mic, Brain, CheckCircle, Loader } from 'lucide-react';
-import { processCVText, processAudioTranscript, processAudioWithWhisper, analyzeCandidate } from '../../utils/analysisEngine';
+import { processCVText, processAudioWithWhisper, analyzeCandidate } from '../../utils/analysisEngine';
 import AIModelStatus from '../AIModelStatus';
 
 const ProcessingStep = () => {
