@@ -7,9 +7,16 @@ echo.
 echo Checking FFmpeg installation...
 ffmpeg -version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ FFmpeg not found! Please install FFmpeg first:
-    echo    choco install ffmpeg
-    echo    or download from https://ffmpeg.org
+    echo ❌ FFmpeg not found! This is required for Whisper transcription.
+    echo.
+    echo 🔧 Quick Fix Options:
+    echo 1. Run: install-ffmpeg.bat (automatic installation)
+    echo 2. Manual: choco install ffmpeg (as Administrator)
+    echo 3. Download from: https://www.gyan.dev/ffmpeg/builds/
+    echo.
+    echo ⚠️  Without FFmpeg, transcription will fail with:
+    echo    "The system cannot find the file specified"
+    echo.
     pause
     exit /b 1
 )

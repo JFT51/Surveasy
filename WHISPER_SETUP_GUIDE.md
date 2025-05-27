@@ -9,16 +9,33 @@
 
 ### 🔧 **Required Dependencies**
 
-#### **1. FFmpeg (Critical)**
-```bash
-# Windows (Administrator PowerShell)
-choco install ffmpeg
+#### **1. FFmpeg (Critical) - REQUIRED FOR WHISPER**
+**⚠️ ISSUE IDENTIFIED: FFmpeg is missing - this is why transcription fails!**
 
-# Alternative: Scoop
-scoop install ffmpeg
+**Option A: Chocolatey (Recommended)**
+```bash
+# Run PowerShell as Administrator
+choco install ffmpeg
 
 # Verify installation
 ffmpeg -version
+```
+
+**Option B: Manual Installation**
+1. Download FFmpeg from: https://www.gyan.dev/ffmpeg/builds/
+2. Extract to `C:\ffmpeg`
+3. Add `C:\ffmpeg\bin` to your PATH environment variable
+4. Restart PowerShell/Command Prompt
+5. Verify: `ffmpeg -version`
+
+**Option C: Scoop**
+```bash
+scoop install ffmpeg
+```
+
+**Option D: Winget**
+```bash
+winget install Gyan.FFmpeg
 ```
 
 #### **2. Python Dependencies**
@@ -137,7 +154,7 @@ TORCH_DEVICE=cpu
 ### **Issue 3: Connection Refused**
 
 **Error**: `Connection refused` in debug panel
-**Solution**: 
+**Solution**:
 1. Check if service is running: `python app.py`
 2. Verify port 5000 is not blocked
 3. Check firewall settings

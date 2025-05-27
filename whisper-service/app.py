@@ -50,13 +50,13 @@ supported_languages = ["nl", "en", "de", "fr", "es"]  # Dutch, English, German, 
 
 class WhisperService:
     """Whisper Speech-to-Text Service"""
-    
+
     def __init__(self, model_name: str = "base"):
         self.model_name = model_name
         self.model = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
-    
+
     def load_model(self):
         """Load Whisper model"""
         try:
@@ -66,10 +66,10 @@ class WhisperService:
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             raise
-    
+
     def transcribe_audio(
-        self, 
-        audio_file_path: str, 
+        self,
+        audio_file_path: str,
         language: str = "nl",
         task: str = "transcribe",
         word_timestamps: bool = True,
@@ -77,21 +77,39 @@ class WhisperService:
     ) -> Dict[str, Any]:
         """
         Transcribe audio file using Whisper
-        
+
         Args:
             audio_file_path: Path to audio file
             language: Language code (nl for Dutch)
             task: 'transcribe' or 'translate'
             word_timestamps: Include word-level timestamps
             initial_prompt: Optional context prompt
-            
+
         Returns:
             Dictionary with transcription results
         """
         try:
             logger.info(f"Transcribing audio file: {audio_file_path}")
             logger.info(f"Language: {language}, Task: {task}")
-            
+
+            # Verify file exists and is readable
+            if not os.path.exists(audio_file_path):
+                raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
+
+            file_size = os.path.getsize(audio_file_path)
+            logger.info(f"Audio file size: {file_size} bytes")
+
+            if file_size == 0:
+                raise ValueError("Audio file is empty")
+
+            # Test if we can load the audio file
+            try:
+                audio = whisper.load_audio(audio_file_path)
+                logger.info(f"Audio loaded successfully, shape: {audio.shape}")
+            except Exception as audio_error:
+                logger.error(f"Failed to load audio file: {audio_error}")
+                raise Exception(f"Audio loading failed: {audio_error}")
+
             # Transcribe with Whisper
             result = self.model.transcribe(
                 audio_file_path,
@@ -101,7 +119,7 @@ class WhisperService:
                 initial_prompt=initial_prompt,
                 verbose=False
             )
-            
+
             # Process results
             transcription_result = {
                 "text": result["text"].strip(),
@@ -118,61 +136,61 @@ class WhisperService:
                     "timestamp": datetime.now().isoformat()
                 }
             }
-            
+
             logger.info(f"Transcription completed. Text length: {len(result['text'])} characters")
             return transcription_result
-            
+
         except Exception as e:
             logger.error(f"Transcription failed: {e}")
             raise
-    
+
     def _calculate_duration(self, segments) -> float:
         """Calculate total audio duration from segments"""
         if not segments:
             return 0.0
         return max(segment.get("end", 0) for segment in segments)
-    
+
     def _calculate_confidence(self, segments) -> float:
         """Calculate average confidence from segments"""
         if not segments:
             return 0.0
-        
+
         confidences = []
         for segment in segments:
             if "words" in segment:
                 word_confidences = [
-                    word.get("probability", 0.0) 
-                    for word in segment["words"] 
+                    word.get("probability", 0.0)
+                    for word in segment["words"]
                     if "probability" in word
                 ]
                 if word_confidences:
                     confidences.extend(word_confidences)
-        
+
         return sum(confidences) / len(confidences) if confidences else 0.8
-    
+
     def detect_language(self, audio_file_path: str) -> Dict[str, Any]:
         """Detect language of audio file"""
         try:
             # Load audio and detect language
             audio = whisper.load_audio(audio_file_path)
             audio = whisper.pad_or_trim(audio)
-            
+
             # Make log-Mel spectrogram
             mel = whisper.log_mel_spectrogram(audio, n_mels=self.model.dims.n_mels).to(self.model.device)
-            
+
             # Detect language
             _, probs = self.model.detect_language(mel)
-            
+
             # Get top 3 languages
             sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)
-            
+
             return {
                 "detected_language": max(probs, key=probs.get),
                 "confidence": max(probs.values()),
                 "top_languages": sorted_probs[:3],
                 "all_probabilities": probs
             }
-            
+
         except Exception as e:
             logger.error(f"Language detection failed: {e}")
             raise
@@ -216,27 +234,36 @@ def transcribe_audio():
         # Check if file is present
         if 'audio' not in request.files:
             return jsonify({"error": "No audio file provided"}), 400
-        
+
         audio_file = request.files['audio']
         if audio_file.filename == '':
             return jsonify({"error": "No file selected"}), 400
-        
+
         # Get parameters
         language = request.form.get('language', 'nl')
         task = request.form.get('task', 'transcribe')
         word_timestamps = request.form.get('word_timestamps', 'true').lower() == 'true'
         initial_prompt = request.form.get('initial_prompt', None)
-        
+
         # Validate language
         if language not in supported_languages:
             return jsonify({"error": f"Unsupported language: {language}"}), 400
-        
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            audio_file.save(temp_file.name)
-            temp_file_path = temp_file.name
-        
+
+        # Create temporary file with proper handling
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+        temp_file_path = temp_file.name
+        temp_file.close()  # Close the file handle so we can write to it
+
         try:
+            # Save uploaded file to temporary location
+            audio_file.save(temp_file_path)
+
+            # Verify file exists and has content
+            if not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
+                raise Exception("Failed to save audio file or file is empty")
+
+            logger.info(f"Saved audio file: {temp_file_path} ({os.path.getsize(temp_file_path)} bytes)")
+
             # Transcribe audio
             result = whisper_service.transcribe_audio(
                 temp_file_path,
@@ -245,17 +272,21 @@ def transcribe_audio():
                 word_timestamps=word_timestamps,
                 initial_prompt=initial_prompt
             )
-            
+
             return jsonify({
                 "success": True,
                 "result": result
             })
-            
+
         finally:
             # Clean up temporary file
-            if os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
-    
+            try:
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    logger.info(f"Cleaned up temporary file: {temp_file_path}")
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to cleanup temporary file: {cleanup_error}")
+
     except Exception as e:
         logger.error(f"Transcription endpoint error: {e}")
         return jsonify({
@@ -269,30 +300,43 @@ def detect_language():
     try:
         if 'audio' not in request.files:
             return jsonify({"error": "No audio file provided"}), 400
-        
+
         audio_file = request.files['audio']
         if audio_file.filename == '':
             return jsonify({"error": "No file selected"}), 400
-        
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            audio_file.save(temp_file.name)
-            temp_file_path = temp_file.name
-        
+
+        # Create temporary file with proper handling
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+        temp_file_path = temp_file.name
+        temp_file.close()  # Close the file handle so we can write to it
+
         try:
+            # Save uploaded file to temporary location
+            audio_file.save(temp_file_path)
+
+            # Verify file exists and has content
+            if not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
+                raise Exception("Failed to save audio file or file is empty")
+
+            logger.info(f"Saved audio file for language detection: {temp_file_path} ({os.path.getsize(temp_file_path)} bytes)")
+
             # Detect language
             result = whisper_service.detect_language(temp_file_path)
-            
+
             return jsonify({
                 "success": True,
                 "result": result
             })
-            
+
         finally:
             # Clean up temporary file
-            if os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
-    
+            try:
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    logger.info(f"Cleaned up temporary file: {temp_file_path}")
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to cleanup temporary file: {cleanup_error}")
+
     except Exception as e:
         logger.error(f"Language detection endpoint error: {e}")
         return jsonify({
@@ -314,13 +358,13 @@ if __name__ == '__main__':
     if env_model != model_name:
         model_name = env_model
         whisper_service = WhisperService(model_name)
-    
+
     # Get port from environment or use default
     port = int(os.getenv('PORT', 5000))
-    
+
     logger.info(f"Starting Whisper service on port {port}")
     logger.info(f"Model: {model_name}, Device: {whisper_service.device}")
-    
+
     app.run(
         host='0.0.0.0',
         port=port,
