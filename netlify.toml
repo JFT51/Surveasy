@@ -1,57 +1,15 @@
-# Netlify Configuration for Surveasy React App
 [build]
-  # Build command for Vite React app
   command = "npm ci && npm run build"
-
-  # Directory containing the built app
   publish = "dist"
 
-  # Node.js version and build environment
-  environment = { NODE_VERSION = "18", NPM_FLAGS = "--production=false" }
+[build.environment]
+  NODE_VERSION = "18"
+  NODE_ENV = "production"
+  VITE_WHISPER_SERVICE_URL = ""
+  VITE_APP_NAME = "Surveasy"
+  VITE_DEMO_MODE = "true"
 
-# Redirect rules for SPA (Single Page Application)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Environment variables for production
-[build.environment]
-  # React/Vite specific variables
-  VITE_WHISPER_SERVICE_URL = ""
-  VITE_APP_NAME = "Surveasy"
-  VITE_APP_VERSION = "1.0.0"
-  VITE_DEBUG_MODE = "false"
-  VITE_ENABLE_LOGGING = "false"
-  VITE_DEMO_MODE = "true"
-
-  # Build environment
-  NODE_ENV = "production"
-  CI = "true"
-
-# Headers for security and performance
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;"
-
-# Cache static assets
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Cache fonts
-[[headers]]
-  for = "/*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Netlify Functions (optional - for basic API endpoints)
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
