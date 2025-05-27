@@ -49,9 +49,7 @@ export const processCVText = async (file) => {
 
 
 
-export const processAudioTranscript = async (file) => {
-  throw new Error('This function is deprecated. Use processAudioWithWhisper instead for real audio transcription.');
-};
+
 
 /**
  * Process audio file using Whisper speech-to-text

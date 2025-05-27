@@ -37,7 +37,16 @@ const ProcessingStep = () => {
   };
 
   useEffect(() => {
+    let isProcessing = false; // Prevent multiple simultaneous runs
+
     const runAnalysis = async () => {
+      if (isProcessing) {
+        console.log('Analysis already in progress, skipping...');
+        return;
+      }
+
+      isProcessing = true;
+
       try {
         // Start processing notification
         const notificationId = processing('AI analyse gestart...', {
@@ -82,8 +91,27 @@ const ProcessingStep = () => {
         let audioTranscript;
 
         try {
-          // Try Whisper transcription first
-          audioResult = await processAudioWithWhisper(state.files.audio);
+          // Use Whisper transcription with retry logic for concurrent processing
+          addLog('Whisper transcriptie gestart...', 'info');
+
+          let retryCount = 0;
+          const maxRetries = 3;
+
+          while (retryCount < maxRetries) {
+            try {
+              audioResult = await processAudioWithWhisper(state.files.audio);
+              break; // Success, exit retry loop
+            } catch (error) {
+              if (error.message.includes('Another transcription is currently in progress') && retryCount < maxRetries - 1) {
+                retryCount++;
+                addLog(`Whisper service bezet, poging ${retryCount + 1}/${maxRetries}...`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retry
+                continue;
+              }
+              throw error; // Re-throw if not a concurrency issue or max retries reached
+            }
+          }
+
           audioTranscript = audioResult.audioTranscript;
 
           if (audioResult.success && audioResult.metadata.isRealTranscription) {
@@ -91,22 +119,11 @@ const ProcessingStep = () => {
             addLog(`Taal: ${audioResult.metadata.language}, Betrouwbaarheid: ${Math.round(audioResult.metadata.confidence * 100)}%`, 'info');
             addLog(`Model: ${audioResult.transcriptionData.processingInfo?.model || 'Whisper'}, Duur: ${Math.round(audioResult.metadata.duration)}s`, 'info');
           } else {
-            addLog('Whisper service niet beschikbaar, demo transcriptie gebruikt', 'warning');
-            addLog(`Demo data geladen: ${audioResult.metadata.wordCount} woorden`, 'info');
+            throw new Error('Whisper transcription failed - no real transcription available');
           }
         } catch (error) {
-          // Fallback to old method if Whisper fails
-          addLog('Whisper transcriptie mislukt, fallback gebruikt', 'warning');
-          audioTranscript = await processAudioTranscript(state.files.audio);
-          audioResult = {
-            success: false,
-            audioTranscript,
-            metadata: {
-              transcriptionMethod: 'Fallback',
-              isRealTranscription: false,
-              error: error.message
-            }
-          };
+          addLog(`Audio transcriptie mislukt: ${error.message}`, 'error');
+          throw new Error(`Audio transcription failed: ${error.message}. Please ensure the Whisper service is running on port 5000.`);
         }
 
         updateProgress(60, 'Audio transcriptie voltooid');
@@ -158,6 +175,8 @@ const ProcessingStep = () => {
       } catch (error) {
         addLog(`Fout tijdens analyse: ${error.message}`, 'error');
         console.error('Analysis error:', error);
+      } finally {
+        isProcessing = false; // Reset processing flag
       }
     };
 
