@@ -1,0 +1,4 @@
+# Minimal Netlify Configuration
+[build]
+  command = "npm run build"
+  publish = "dist"

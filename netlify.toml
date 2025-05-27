@@ -5,11 +5,3 @@
 [build.environment]
   NODE_VERSION = "18"
   NODE_ENV = "production"
-  VITE_WHISPER_SERVICE_URL = ""
-  VITE_APP_NAME = "Surveasy"
-  VITE_DEMO_MODE = "true"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200

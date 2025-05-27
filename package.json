@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:production": "vite build --mode production --logLevel info",
+    "build:debug": "vite build --mode production --logLevel verbose",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "build:netlify": "npm install && vite build --mode production",

@@ -1,0 +1,11 @@
+# Verbose Netlify Configuration for Debugging
+[build]
+  command = "npm install --verbose && npm run build:debug"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NODE_ENV = "production"
+  DEBUG = "*"
+  VITE_WHISPER_SERVICE_URL = ""
+  VITE_DEMO_MODE = "true"
