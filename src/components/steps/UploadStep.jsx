@@ -1,14 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { Upload, FileText, Mic, CheckCircle, X } from 'lucide-react';
+import { Upload, FileText, Mic, CheckCircle, X, Settings } from 'lucide-react';
 import { validatePDF } from '../../utils/pdfProcessor';
 import AIModelStatus from '../AIModelStatus';
+import Modal from '../Modal';
+import WhisperDebugPanel from '../debug/WhisperDebugPanel';
 
 const UploadStep = () => {
   const { state, setFiles, setStep } = useApp();
   const { success, error, info } = useNotifications();
   const [dragOver, setDragOver] = useState({ cv: false, audio: false });
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const cvInputRef = useRef(null);
   const audioInputRef = useRef(null);
 
@@ -235,21 +238,49 @@ const UploadStep = () => {
       <AIModelStatus step="upload" />
 
       {/* Continue Button */}
-      <div className="text-center">
-        <button
-          onClick={() => setStep('skills')}
-          disabled={!canProceed}
-          className={`btn-primary ${!canProceed ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          Doorgaan naar Vaardigheden
-        </button>
+      <div className="text-center space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button
+            onClick={() => setStep('skills')}
+            disabled={!canProceed}
+            className={`btn-primary ${!canProceed ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            Doorgaan naar Vaardigheden
+          </button>
+
+          <button
+            onClick={() => setIsDebugModalOpen(true)}
+            className="btn-secondary flex items-center space-x-2 bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 hover:border-orange-300"
+            title="Open Whisper Debug Panel om de speech-to-text functionaliteit te testen en problemen op te lossen"
+          >
+            <Settings className="w-5 h-5" />
+            <span>Whisper Debug</span>
+          </button>
+        </div>
 
         {!canProceed && (
-          <p className="text-xl text-neutral-500 mt-4">
+          <p className="text-xl text-neutral-500">
             Upload beide bestanden om door te gaan
           </p>
         )}
+
+        <div className="text-center">
+          <p className="text-sm text-neutral-400 max-w-2xl mx-auto">
+            💡 <strong>Tip:</strong> Gebruik de "Whisper Debug" knop om de speech-to-text functionaliteit te testen
+            en eventuele problemen met de audio transcriptie op te sporen.
+          </p>
+        </div>
       </div>
+
+      {/* Debug Modal */}
+      <Modal
+        isOpen={isDebugModalOpen}
+        onClose={() => setIsDebugModalOpen(false)}
+        title="Whisper Speech-to-Text Debug Panel"
+        size="xlarge"
+      >
+        <WhisperDebugPanel />
+      </Modal>
     </div>
   );
 };
