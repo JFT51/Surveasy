@@ -10,6 +10,10 @@
 **Root Cause**: Duplicate environment sections in netlify.toml causing TOML parsing error.
 **Status**: ✅ FIXED
 
+### Issue 3: "vite: not found" Error
+**Root Cause**: npm ci excludes devDependencies, but vite is needed for build.
+**Status**: ✅ FIXED
+
 ## Solutions Applied
 
 ### 1. Fixed netlify.toml Parsing Error
@@ -22,8 +26,13 @@
 - **Backup _redirects**: Added `public/_redirects` for SPA routing
 - **Clean syntax**: Removed complex headers that could cause parsing issues
 
-### 3. React-Specific Configuration
-- **Build command**: `npm ci && npm run build`
+### 3. Fixed Vite Build Dependencies
+- **Problem**: `npm ci` excludes devDependencies, but vite is required for build
+- **Solution**: Changed to `npm install` to include all dependencies
+- **Result**: Vite available during build process
+
+### 4. React-Specific Configuration
+- **Build command**: `npm install && npm run build`
 - **Node version**: Explicit Node.js 18
 - **Environment**: Production mode with demo settings
 
@@ -32,7 +41,7 @@
 ### netlify.toml (Fixed)
 ```toml
 [build]
-  command = "npm ci && npm run build"
+  command = "npm install && npm run build"
   publish = "dist"
 
 [build.environment]

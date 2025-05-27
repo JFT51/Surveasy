@@ -1,0 +1,18 @@
+# Alternative Netlify Configuration (if main one fails)
+# Rename this to netlify.toml if needed
+
+[build]
+  command = "npm run build:netlify"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NODE_ENV = "production"
+  VITE_WHISPER_SERVICE_URL = ""
+  VITE_APP_NAME = "Surveasy"
+  VITE_DEMO_MODE = "true"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
