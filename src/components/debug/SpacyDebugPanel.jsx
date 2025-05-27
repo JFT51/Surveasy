@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Alert, AlertDescription } from '../ui/alert';
-import { 
-  Brain, 
-  CheckCircle, 
-  XCircle, 
-  Loader2, 
-  FileText, 
+import {
+  Brain,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  FileText,
   BarChart3,
   Users,
   Target,
   MessageSquare,
-  Lightbulb
+  Lightbulb,
+  RefreshCw
 } from 'lucide-react';
 import { spacyService } from '../../utils/spacyService.js';
 
@@ -64,7 +61,7 @@ Talen:
 
   const checkServiceStatus = async () => {
     setServiceStatus(prev => ({ ...prev, loading: true, error: null }));
-    
+
     try {
       const available = await spacyService.checkAvailability();
       setServiceStatus({
@@ -94,7 +91,7 @@ Talen:
     }
 
     setAnalysis({ result: null, loading: true, error: null });
-    
+
     try {
       const result = await spacyService.analyzeText(testText);
       setAnalysis({ result, loading: false, error: null });
@@ -115,13 +112,13 @@ Talen:
     }
 
     setAnalysis({ result: null, loading: true, error: null });
-    
+
     try {
       const skills = await spacyService.extractSkills(testText);
-      setAnalysis({ 
-        result: { skills, type: 'skills_only' }, 
-        loading: false, 
-        error: null 
+      setAnalysis({
+        result: { skills, type: 'skills_only' },
+        loading: false,
+        error: null
       });
     } catch (error) {
       console.error('spaCy skills extraction failed:', error);
@@ -130,65 +127,68 @@ Talen:
   };
 
   const renderServiceStatus = () => (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="card mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-neutral-900 flex items-center gap-2">
           <Brain className="h-5 w-5" />
           spaCy Dutch NLP Service Status
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4 mb-4">
-          <Button 
-            onClick={checkServiceStatus} 
-            disabled={serviceStatus.loading}
-            variant="outline"
-            size="sm"
-          >
-            {serviceStatus.loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              'Refresh Status'
-            )}
-          </Button>
-          
-          <Badge 
-            variant={serviceStatus.available ? "default" : "destructive"}
-            className="flex items-center gap-1"
-          >
-            {serviceStatus.available ? (
-              <CheckCircle className="h-3 w-3" />
-            ) : (
-              <XCircle className="h-3 w-3" />
-            )}
-            {serviceStatus.available ? 'Available' : 'Unavailable'}
-          </Badge>
-        </div>
+        </h3>
+        <button
+          onClick={checkServiceStatus}
+          disabled={serviceStatus.loading}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+        >
+          {serviceStatus.loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          <span>Refresh Status</span>
+        </button>
+      </div>
 
-        {serviceStatus.info && (
-          <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-4 mb-4">
+        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+          serviceStatus.available
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
+        }`}>
+          {serviceStatus.available ? (
+            <CheckCircle className="h-3 w-3" />
+          ) : (
+            <XCircle className="h-3 w-3" />
+          )}
+          {serviceStatus.available ? 'Available' : 'Unavailable'}
+        </div>
+      </div>
+
+      {serviceStatus.info && (
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+          <h4 className="font-medium text-green-800 mb-2">Service Information</h4>
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div><strong>Status:</strong> {serviceStatus.info.status}</div>
             <div><strong>Model:</strong> {serviceStatus.info.model}</div>
             <div><strong>Model Loaded:</strong> {serviceStatus.info.model_loaded ? 'Yes' : 'No'}</div>
             {serviceStatus.info.pipeline && (
-              <div><strong>Pipeline:</strong> {serviceStatus.info.pipeline.join(', ')}</div>
+              <div className="col-span-2"><strong>Pipeline:</strong> {serviceStatus.info.pipeline.join(', ')}</div>
             )}
             {serviceStatus.info.demo_mode && (
-              <div className="text-orange-600"><strong>Demo Mode:</strong> Running in demo mode</div>
+              <div className="col-span-2 text-orange-600"><strong>Demo Mode:</strong> Running in demo mode</div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {serviceStatus.error && (
-          <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>
-              Service Error: {serviceStatus.error}
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+      {serviceStatus.error && (
+        <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <div>
+            <p className="font-medium text-red-800">Service Error</p>
+            <p className="text-sm text-red-600">{serviceStatus.error}</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 
   const renderTestInterface = () => (
@@ -212,9 +212,9 @@ Talen:
               placeholder="Enter Dutch text to analyze..."
             />
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={analyzeText}
               disabled={analysis.loading || !serviceStatus.available}
               className="flex items-center gap-2"
@@ -226,8 +226,8 @@ Talen:
               )}
               Full Analysis
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={extractSkills}
               disabled={analysis.loading || !serviceStatus.available}
               variant="outline"
