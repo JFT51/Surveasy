@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Mic, MicOff, Play, Square, Upload, Download, 
-  CheckCircle, XCircle, AlertCircle, Loader, 
+import {
+  Mic, MicOff, Play, Square, Upload, Download,
+  CheckCircle, XCircle, AlertCircle, Loader,
   Volume2, FileAudio, Settings, RefreshCw
 } from 'lucide-react';
 import { whisperService, AudioRecorder, blobToFile, formatTranscriptionResult } from '../../utils/whisperService';
@@ -13,28 +13,28 @@ const WhisperDebugPanel = () => {
     info: null,
     error: null
   });
-  
+
   const [recorder, setRecorder] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
-  
+
   const [transcription, setTranscription] = useState({
     result: null,
     loading: false,
     error: null
   });
-  
+
   const [uploadedFile, setUploadedFile] = useState(null);
 
   // Initialize recorder and check service
   useEffect(() => {
     const audioRecorder = new AudioRecorder();
     setRecorder(audioRecorder);
-    
+
     checkWhisperService();
-    
+
     return () => {
       if (audioRecorder) {
         audioRecorder.cleanup();
@@ -52,17 +52,17 @@ const WhisperDebugPanel = () => {
     } else {
       setRecordingTime(0);
     }
-    
+
     return () => clearInterval(interval);
   }, [isRecording]);
 
   const checkWhisperService = async () => {
     setServiceStatus(prev => ({ ...prev, checking: true, error: null }));
-    
+
     try {
       const available = await whisperService.checkAvailability();
       const info = whisperService.getServiceInfo();
-      
+
       setServiceStatus({
         available,
         checking: false,
@@ -97,7 +97,7 @@ const WhisperDebugPanel = () => {
       const blob = await recorder.stopRecording();
       setIsRecording(false);
       setAudioBlob(blob);
-      
+
       // Create audio URL for playback
       const url = URL.createObjectURL(blob);
       setAudioUrl(url);
@@ -108,29 +108,53 @@ const WhisperDebugPanel = () => {
   };
 
   const transcribeAudio = async (audioFile) => {
+    // Prevent concurrent transcriptions
+    if (transcription.loading) {
+      console.warn('Transcription already in progress, ignoring request');
+      return;
+    }
+
     setTranscription({ result: null, loading: true, error: null });
-    
+
     try {
-      console.log('Starting transcription with Whisper service...');
-      
+      console.log('Starting transcription with Whisper service...', {
+        fileName: audioFile.name,
+        fileSize: audioFile.size,
+        fileType: audioFile.type
+      });
+
       if (!serviceStatus.available) {
-        throw new Error('Whisper service is not available');
+        throw new Error('Whisper service is not available. Please check the service status.');
       }
-      
+
+      // Add a small delay to prevent rapid-fire requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const result = await whisperService.transcribeAudio(audioFile, {
         language: 'nl',
         task: 'transcribe',
         wordTimestamps: true,
         initialPrompt: 'Dit is een sollicitatiegesprek in het Nederlands.'
       });
-      
+
       const formattedResult = formatTranscriptionResult(result);
       setTranscription({ result: formattedResult, loading: false, error: null });
-      
-      console.log('Transcription completed:', formattedResult);
+
+      console.log('Transcription completed successfully:', formattedResult);
     } catch (error) {
       console.error('Transcription failed:', error);
-      setTranscription({ result: null, loading: false, error: error.message });
+
+      // Provide more detailed error information
+      let errorMessage = error.message;
+      if (error.message.includes('NoneType')) {
+        errorMessage = 'Whisper service internal error. This may be due to audio format issues or service overload. Please try again with a different audio file.';
+      } else if (error.message.includes('tensor')) {
+        errorMessage = 'Audio processing error. The audio file may be corrupted or in an unsupported format.';
+      } else if (error.message.includes('reshape')) {
+        errorMessage = 'Audio format error. Please try with a different audio file or format.';
+      }
+
+      setTranscription({ result: null, loading: false, error: errorMessage });
     }
   };
 
@@ -184,7 +208,7 @@ const WhisperDebugPanel = () => {
       {/* Service Status */}
       <div className="card">
         <h3 className="text-xl font-semibold text-neutral-900 mb-4">Service Status</h3>
-        
+
         <div className="flex items-center space-x-3 mb-4">
           {serviceStatus.checking ? (
             <Loader className="w-6 h-6 text-blue-600 animate-spin" />
@@ -193,11 +217,11 @@ const WhisperDebugPanel = () => {
           ) : (
             <XCircle className="w-6 h-6 text-red-600" />
           )}
-          
+
           <div>
             <p className="font-medium">
-              {serviceStatus.checking ? 'Checking service...' : 
-               serviceStatus.available ? 'Whisper Service Available' : 
+              {serviceStatus.checking ? 'Checking service...' :
+               serviceStatus.available ? 'Whisper Service Available' :
                'Whisper Service Unavailable'}
             </p>
             {serviceStatus.error && (
@@ -230,7 +254,7 @@ const WhisperDebugPanel = () => {
       {/* Audio Recording */}
       <div className="card">
         <h3 className="text-xl font-semibold text-neutral-900 mb-4">Live Recording</h3>
-        
+
         <div className="flex items-center space-x-4 mb-4">
           {!isRecording ? (
             <button
@@ -249,7 +273,7 @@ const WhisperDebugPanel = () => {
               <span>Stop Recording</span>
             </button>
           )}
-          
+
           {isRecording && (
             <div className="flex items-center space-x-2 text-red-600">
               <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
@@ -270,7 +294,7 @@ const WhisperDebugPanel = () => {
                 <Download className="w-5 h-5" />
               </button>
             </div>
-            
+
             <button
               onClick={transcribeRecording}
               disabled={!serviceStatus.available || transcription.loading}
@@ -286,7 +310,7 @@ const WhisperDebugPanel = () => {
       {/* File Upload */}
       <div className="card">
         <h3 className="text-xl font-semibold text-neutral-900 mb-4">File Upload</h3>
-        
+
         <div className="space-y-4">
           <div className="flex items-center space-x-4">
             <label className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
@@ -299,7 +323,7 @@ const WhisperDebugPanel = () => {
                 className="hidden"
               />
             </label>
-            
+
             {uploadedFile && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <FileAudio className="w-4 h-4" />
@@ -314,14 +338,14 @@ const WhisperDebugPanel = () => {
       {/* Transcription Results */}
       <div className="card">
         <h3 className="text-xl font-semibold text-neutral-900 mb-4">Transcription Results</h3>
-        
+
         {transcription.loading && (
           <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
             <Loader className="w-5 h-5 text-blue-600 animate-spin" />
             <span className="text-blue-800">Transcribing audio...</span>
           </div>
         )}
-        
+
         {transcription.error && (
           <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg">
             <AlertCircle className="w-5 h-5 text-red-600" />
@@ -331,7 +355,7 @@ const WhisperDebugPanel = () => {
             </div>
           </div>
         )}
-        
+
         {transcription.result && (
           <div className="space-y-4">
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -351,12 +375,12 @@ const WhisperDebugPanel = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-gray-800 mb-2">Transcribed Text</h4>
               <p className="text-gray-700 leading-relaxed">{transcription.result.text}</p>
             </div>
-            
+
             {transcription.result.segments && transcription.result.segments.length > 0 && (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-800 mb-2">Segments</h4>

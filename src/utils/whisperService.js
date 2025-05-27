@@ -137,6 +137,7 @@ export class WhisperService {
         console.log('Transcription completed:', result.result);
         return result.result;
       } else {
+        console.error('Transcription failed:', result.error);
         throw new Error(result.error || 'Transcription failed');
       }
     } catch (error) {

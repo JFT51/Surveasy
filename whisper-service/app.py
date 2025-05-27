@@ -8,10 +8,9 @@ import os
 import sys
 import tempfile
 import logging
+import threading
 from pathlib import Path
 from typing import Optional, Dict, Any
-import json
-import asyncio
 from datetime import datetime
 
 # Add whisper-main to Python path
@@ -47,6 +46,7 @@ CORS(app)  # Enable CORS for React frontend
 whisper_model = None
 model_name = "base"  # Default model
 supported_languages = ["nl", "en", "de", "fr", "es"]  # Dutch, English, German, French, Spanish
+processing_lock = threading.Lock()  # Prevent concurrent processing
 
 class WhisperService:
     """Whisper Speech-to-Text Service"""
@@ -120,14 +120,40 @@ class WhisperService:
                 verbose=False
             )
 
-            # Process results
+            # Validate result
+            if result is None:
+                raise Exception("Whisper transcription returned None result")
+
+            if not isinstance(result, dict):
+                raise Exception(f"Whisper transcription returned invalid result type: {type(result)}")
+
+            if "text" not in result:
+                raise Exception("Whisper transcription result missing 'text' field")
+
+            # Safely extract text
+            text = result.get("text", "")
+            if text is None:
+                text = ""
+            text = str(text).strip()
+
+            # Safely extract segments
+            segments = result.get("segments", [])
+            if segments is None:
+                segments = []
+
+            # Ensure segments is a list
+            if not isinstance(segments, list):
+                logger.warning(f"Segments is not a list: {type(segments)}, converting to empty list")
+                segments = []
+
+            # Process results with safe extraction
             transcription_result = {
-                "text": result["text"].strip(),
-                "language": result.get("language", language),
-                "segments": result.get("segments", []),
-                "word_count": len(result["text"].split()),
-                "duration": self._calculate_duration(result.get("segments", [])),
-                "confidence": self._calculate_confidence(result.get("segments", [])),
+                "text": text,
+                "language": result.get("language", language) or language,
+                "segments": segments,
+                "word_count": len(text.split()) if text else 0,
+                "duration": self._calculate_duration(segments),
+                "confidence": self._calculate_confidence(segments),
                 "processing_info": {
                     "model": self.model_name,
                     "device": self.device,
@@ -137,7 +163,7 @@ class WhisperService:
                 }
             }
 
-            logger.info(f"Transcription completed. Text length: {len(result['text'])} characters")
+            logger.info(f"Transcription completed. Text length: {len(text)} characters")
             return transcription_result
 
         except Exception as e:
@@ -146,27 +172,65 @@ class WhisperService:
 
     def _calculate_duration(self, segments) -> float:
         """Calculate total audio duration from segments"""
-        if not segments:
+        if not segments or not isinstance(segments, list):
             return 0.0
-        return max(segment.get("end", 0) for segment in segments)
+
+        try:
+            durations = []
+            for segment in segments:
+                if segment is not None and isinstance(segment, dict):
+                    end_time = segment.get("end", 0)
+                    if end_time is not None and isinstance(end_time, (int, float)):
+                        durations.append(end_time)
+
+            return max(durations) if durations else 0.0
+        except Exception as e:
+            logger.warning(f"Error calculating duration: {e}")
+            return 0.0
 
     def _calculate_confidence(self, segments) -> float:
         """Calculate average confidence from segments"""
-        if not segments:
-            return 0.0
+        if not segments or not isinstance(segments, list):
+            return 0.8  # Default confidence when no segments available
 
-        confidences = []
-        for segment in segments:
-            if "words" in segment:
-                word_confidences = [
-                    word.get("probability", 0.0)
-                    for word in segment["words"]
-                    if "probability" in word
-                ]
-                if word_confidences:
-                    confidences.extend(word_confidences)
+        try:
+            confidences = []
+            for segment in segments:
+                if segment is None or not isinstance(segment, dict):
+                    continue
 
-        return sum(confidences) / len(confidences) if confidences else 0.8
+                # Try to get confidence from segment level first
+                if "avg_logprob" in segment:
+                    # Convert log probability to confidence (approximate)
+                    logprob = segment.get("avg_logprob", -1.0)
+                    if logprob is not None and isinstance(logprob, (int, float)):
+                        confidence = min(1.0, max(0.0, (logprob + 1.0)))  # Normalize roughly
+                        confidences.append(confidence)
+
+                # Try to get word-level confidences
+                elif "words" in segment and segment["words"] is not None:
+                    words = segment["words"]
+                    if isinstance(words, list):
+                        word_confidences = []
+                        for word in words:
+                            if word is not None and isinstance(word, dict):
+                                prob = word.get("probability", None)
+                                if prob is not None and isinstance(prob, (int, float)):
+                                    word_confidences.append(prob)
+
+                        if word_confidences:
+                            confidences.extend(word_confidences)
+
+            # Calculate average confidence
+            if confidences:
+                avg_confidence = sum(confidences) / len(confidences)
+                return max(0.0, min(1.0, avg_confidence))  # Ensure between 0 and 1
+            else:
+                return 0.8  # Default confidence when no confidence data available
+
+        except Exception as e:
+            logger.warning(f"Error calculating confidence: {e}")
+            return 0.8  # Default confidence on error
 
     def detect_language(self, audio_file_path: str) -> Dict[str, Any]:
         """Detect language of audio file"""
@@ -230,6 +294,13 @@ def get_available_models():
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
     """Transcribe uploaded audio file"""
+    # Check if another transcription is in progress
+    if not processing_lock.acquire(blocking=False):
+        return jsonify({
+            "success": False,
+            "error": "Another transcription is currently in progress. Please wait and try again."
+        }), 429  # Too Many Requests
+
     try:
         # Check if file is present
         if 'audio' not in request.files:
@@ -293,6 +364,9 @@ def transcribe_audio():
             "success": False,
             "error": str(e)
         }), 500
+    finally:
+        # Always release the processing lock
+        processing_lock.release()
 
 @app.route('/detect-language', methods=['POST'])
 def detect_language():
