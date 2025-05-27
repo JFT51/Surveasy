@@ -113,8 +113,9 @@ const UploadStep = () => {
           Upload Kandidaat Bestanden
         </h2>
         <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-          Upload de CV (PDF) en interview audio van de kandidaat om de AI-analyse te starten.
-          Het systeem extraheert vaardigheden en genereert een uitgebreide beoordeling.
+          Upload hier de mock CV (PDF) en audio interview die ik u heb doorgemaild.
+          Het systeem extraheert vaardigheden en zal een uitgebreide beoordeling genereren.
+          In een volgende fase zullen kandidaten ook een ranking krijgen maar wil eerst dit overlopen.
         </p>
       </div>
 
