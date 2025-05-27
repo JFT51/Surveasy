@@ -35,8 +35,8 @@ const DemoNotice = () => {
           </h3>
           
           <p className="text-blue-800 mb-3">
-            Je bekijkt een volledig functionele demo van Surveasy. Alle features werken met realistische demo data 
-            om de complete kandidaat analyse workflow te demonstreren.
+            Dit is een demo versie van hoe ik het concept zie. Alles werkt met realistische demo data. 
+            Bedoeling is dat uwe klant (of gij) eerst deze workflow valideert.
           </p>
           
           <div className="grid md:grid-cols-3 gap-4 mb-3">
