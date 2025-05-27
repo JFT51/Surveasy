@@ -1,5 +1,8 @@
 # Whisper Speech-to-Text Service Requirements
 
+# OpenAI Whisper (main package)
+openai-whisper>=20231117
+
 # Core Whisper dependencies
 torch>=1.10.1
 tqdm>=4.64.0
