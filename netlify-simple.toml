@@ -1,0 +1,4 @@
+# Super Simple Netlify Configuration
+[build]
+  command = "./node_modules/.bin/vite build"
+  publish = "dist"

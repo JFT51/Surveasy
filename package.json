@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:production": "vite build --mode production --logLevel info",
-    "build:debug": "vite build --mode production --logLevel verbose",
+    "build": "npx vite build",
+    "build:production": "npx vite build --mode production --logLevel info",
+    "build:debug": "npx vite build --mode production --logLevel verbose",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "build:netlify": "npm install && vite build --mode production",
+    "build:netlify": "npm install && npx vite build --mode production",
     "start": "vite preview --port 3000",
     "clean": "rm -rf dist node_modules/.vite"
   },
