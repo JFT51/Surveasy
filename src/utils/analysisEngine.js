@@ -5,6 +5,11 @@ import { extractTextFromPDF, parseCV } from './pdfProcessor.js';
 import { analyzeCVWithNLP } from './cvAnalyzer.js';
 import { extractSkillsNLP } from './nlpProcessor.js';
 import { whisperService, formatTranscriptionResult } from './whisperService.js';
+import {
+  analyzeCommunicationQuality,
+  extractPersonalityTraits,
+  analyzeLeadershipSkills
+} from './audioTranscriptAnalyzer.js';
 
 export const processCVText = async (file) => {
   try {
@@ -468,87 +473,110 @@ const extractSkillsFromText = (text) => {
 };
 
 /**
- * Analyze communication skills from audio transcript with Whisper metadata
+ * Enhanced audio communication analysis using advanced transcript analyzer
  */
 const analyzeAudioCommunication = (audioTranscript, audioResult = null) => {
   if (!audioTranscript || audioTranscript.length < 50) {
     return {
-      clarity: 70,
-      confidence: 70,
-      technicalCommunication: 70,
-      languageProficiency: 'intermediate',
+      clarity: 0,
+      confidence: 0,
+      technicalCommunication: 0,
+      fluency: 0,
+      languageProficiency: 'unknown',
       communicationStyle: 'unknown',
       keyPoints: [],
       transcriptionMethod: 'none',
-      isRealTranscription: false
+      isRealTranscription: false,
+      personalityTraits: [],
+      leadershipSkills: { leadershipScore: 0, problemSolvingScore: 0 },
+      communicationInsights: [],
+      overallCommunicationScore: 0
     };
   }
 
-  const text = audioTranscript.toLowerCase();
+  // Get audio metadata
+  const audioMetadata = audioResult?.metadata || null;
+  const isRealTranscription = audioMetadata?.isRealTranscription || false;
+  const transcriptionMethod = audioMetadata?.transcriptionMethod || 'mock';
 
-  // Use Whisper confidence if available
-  let baseConfidence = 75;
-  let transcriptionMethod = 'mock';
-  let isRealTranscription = false;
+  console.log('Enhanced audio communication analysis:', {
+    transcriptLength: audioTranscript.length,
+    isReal: isRealTranscription,
+    method: transcriptionMethod,
+    confidence: audioMetadata?.confidence
+  });
 
-  if (audioResult?.metadata) {
-    baseConfidence = Math.round(audioResult.metadata.confidence * 100);
-    transcriptionMethod = audioResult.metadata.transcriptionMethod;
-    isRealTranscription = audioResult.metadata.isRealTranscription;
+  // Perform comprehensive communication analysis
+  const communicationQuality = analyzeCommunicationQuality(audioTranscript, audioMetadata);
 
-    console.log('Using Whisper metadata for communication analysis:', {
-      confidence: baseConfidence,
-      method: transcriptionMethod,
-      isReal: isRealTranscription
-    });
-  }
+  // Extract personality traits
+  const personalityAnalysis = extractPersonalityTraits(audioTranscript);
 
-  // Analyze clarity based on sentence structure and vocabulary
-  let clarity = baseConfidence;
-  if (text.includes('duidelijk') || text.includes('helder')) clarity += 10;
-  if (text.split('.').length > 5) clarity += 5; // Well-structured sentences
+  // Analyze leadership and soft skills
+  const leadershipAnalysis = analyzeLeadershipSkills(audioTranscript);
 
-  // Boost clarity if using real Whisper transcription
-  if (isRealTranscription) {
-    clarity = Math.min(clarity + 10, 100);
-  }
-
-  // Analyze confidence based on language patterns
-  let confidence = baseConfidence;
-  if (text.includes('ik denk') || text.includes('ik geloof')) confidence += 5;
-  if (text.includes('absoluut') || text.includes('zeker')) confidence += 10;
-  if (text.includes('misschien') || text.includes('mogelijk')) confidence -= 5;
-
-  // Analyze technical communication
-  let technicalCommunication = baseConfidence;
-  const technicalTerms = ['systeem', 'proces', 'implementatie', 'integratie', 'analyse'];
-  const foundTerms = technicalTerms.filter(term => text.includes(term));
-  technicalCommunication += foundTerms.length * 5;
-
-  // Extract key communication points
+  // Extract key communication points (enhanced)
   const sentences = audioTranscript.split(/[.!?]+/).filter(s => s.trim().length > 20);
-  const keyPoints = sentences.slice(0, 3).map(s => s.trim());
+  const keyPoints = sentences.slice(0, 4).map(s => s.trim());
 
   // Determine language proficiency from Whisper metadata
   let languageProficiency = 'intermediate';
-  if (audioResult?.metadata?.language === 'nl' && isRealTranscription) {
-    if (baseConfidence >= 90) languageProficiency = 'native';
-    else if (baseConfidence >= 80) languageProficiency = 'fluent';
-    else if (baseConfidence >= 70) languageProficiency = 'intermediate';
+  if (audioMetadata?.language === 'nl' && isRealTranscription) {
+    const confidence = Math.round(audioMetadata.confidence * 100);
+    if (confidence >= 90) languageProficiency = 'native';
+    else if (confidence >= 80) languageProficiency = 'fluent';
+    else if (confidence >= 70) languageProficiency = 'intermediate';
     else languageProficiency = 'basic';
   }
 
+  // Combine all insights
+  const allInsights = [
+    ...communicationQuality.insights,
+    ...personalityAnalysis.insights,
+    ...leadershipAnalysis.insights
+  ];
+
+  // Calculate overall communication score
+  const overallCommunicationScore = Math.round(
+    (communicationQuality.overallScore +
+     personalityAnalysis.confidence +
+     ((leadershipAnalysis.leadershipScore + leadershipAnalysis.problemSolvingScore) / 2)) / 3
+  );
+
   return {
-    clarity: Math.min(clarity, 100),
-    confidence: Math.min(confidence, 100),
-    technicalCommunication: Math.min(technicalCommunication, 100),
+    // Basic communication metrics
+    clarity: communicationQuality.clarity,
+    confidence: communicationQuality.confidence,
+    technicalCommunication: communicationQuality.technicalCommunication,
+    fluency: communicationQuality.fluency,
+
+    // Enhanced analysis results
+    overallCommunicationScore,
+    personalityTraits: personalityAnalysis.traits,
+    leadershipSkills: {
+      leadershipScore: leadershipAnalysis.leadershipScore,
+      problemSolvingScore: leadershipAnalysis.problemSolvingScore
+    },
+
+    // Communication insights and metadata
+    communicationInsights: allInsights,
+    keyPoints,
     languageProficiency,
     communicationStyle: isRealTranscription ? 'analyzed' : 'simulated',
-    keyPoints,
+
+    // Technical metadata
     transcriptionMethod,
     isRealTranscription,
-    whisperConfidence: audioResult?.metadata?.confidence || null,
-    audioMetadata: audioResult?.metadata || null
+    whisperConfidence: audioMetadata?.confidence || null,
+    audioMetadata,
+
+    // Analysis metadata
+    analysisMetadata: {
+      ...communicationQuality.metadata,
+      personalityConfidence: personalityAnalysis.confidence,
+      analysisTimestamp: new Date().toISOString(),
+      enhancedAnalysis: true
+    }
   };
 };
 

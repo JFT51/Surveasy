@@ -11,6 +11,7 @@ import AnalysisCharts from '../results/AnalysisCharts';
 import DetailedSkills from '../results/DetailedSkills';
 import FullTextDisplay from '../results/FullTextDisplay';
 import WhisperDebugPanel from '../debug/WhisperDebugPanel';
+import AudioAnalysisResults from '../results/AudioAnalysisResults';
 
 const ResultsStep = () => {
   const { state, resetApp } = useApp();
@@ -60,6 +61,7 @@ const ResultsStep = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overzicht', icon: BarChart3 },
+    { id: 'audio-analysis', label: 'Audio Analyse', icon: Mic },
     { id: 'charts', label: 'Grafieken', icon: PieChart },
     { id: 'skills', label: 'Vaardigheden Detail', icon: Award },
     { id: 'ai-tools', label: 'AI Tools Status', icon: Brain },
@@ -214,6 +216,13 @@ const ResultsStep = () => {
             </p>
           </div>
         </div>
+      )}
+
+      {activeTab === 'audio-analysis' && (
+        <AudioAnalysisResults
+          communicationAnalysis={analysis.communicationAnalysis}
+          audioMetadata={state.extractedData.audioResult?.metadata}
+        />
       )}
 
       {activeTab === 'charts' && (
