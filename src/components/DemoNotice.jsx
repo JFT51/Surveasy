@@ -35,7 +35,7 @@ const DemoNotice = () => {
           </h3>
           
           <p className="text-blue-800 mb-3">
-            Dit is een demo versie van hoe ik het concept zie. Alles werkt met realistische demo data. 
+            Dit is een demo versie van hoe ik het concept zie. Alles werkt momenteel met demo data. 
             Bedoeling is dat uwe klant (of gij) eerst deze workflow valideert.
           </p>
           
@@ -47,7 +47,7 @@ const DemoNotice = () => {
             
             <div className="flex items-center space-x-2 text-sm text-blue-700">
               <Zap className="w-4 h-4 text-blue-500" />
-              <span><strong>Audio:</strong> Demo transcriptie</span>
+              <span><strong>Audio:</strong> Momenteel demo transcriptie</span>
             </div>
             
             <div className="flex items-center space-x-2 text-sm text-blue-700">
@@ -58,8 +58,8 @@ const DemoNotice = () => {
           
           <div className="bg-blue-100 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>💡 Productie versie:</strong> In de volledige implementatie wordt Whisper AI gebruikt 
-              voor echte speech-to-text transcriptie van interview audio.
+              <strong>💡 Nota:</strong> In de volledige implementatie ga ik Whisper AI gebruiken 
+              voor de speech-to-text transcriptie van interview audio.
             </p>
           </div>
         </div>
