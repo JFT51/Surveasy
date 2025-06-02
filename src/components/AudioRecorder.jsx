@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Mic, MicOff, Square, Play, Pause, Download, Upload,
-  Volume2, Clock, Zap, CheckCircle, AlertTriangle, Loader
+  Volume2, Clock, Zap, CheckCircle, AlertTriangle, Loader, XCircle
 } from 'lucide-react';
-import { AudioRecorder, whisperService, blobToFile, formatTranscriptionResult, generateMockTranscription } from '../utils/whisperService';
+import { AudioRecorder, whisperService, blobToFile, formatTranscriptionResult } from '../utils/whisperService';
 
 const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -69,11 +69,15 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
       if (whisperAvailable) {
         await transcribeAudio(blob);
       } else {
-        // Generate mock transcription
-        const mockResult = generateMockTranscription(recordingTime);
-        setTranscriptionResult(mockResult);
+        // Transcribe audio using Whisper service
+        const result = await whisperService.transcribeAudio(audioFile, {
+          language: 'nl', // Assuming Dutch for now
+          task: 'transcribe',
+          wordTimestamps: true
+        });
+        setTranscriptionResult(result);
         if (onTranscriptionComplete) {
-          onTranscriptionComplete(mockResult);
+          onTranscriptionComplete(result);
         }
       }
     } catch (error) {
@@ -206,9 +210,9 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
               Whisper Actief
             </span>
           ) : (
-            <span className="flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-              <Zap className="w-4 h-4 mr-1" />
-              Demo Modus
+            <span className="flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+              <XCircle className="w-4 h-4 mr-1" />
+              Whisper Niet Actief
             </span>
           )}
         </div>
@@ -220,15 +224,13 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
         <div className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="font-medium text-neutral-700">Whisper Service:</span>
-            <span className={`ml-2 ${whisperAvailable ? 'text-green-600' : 'text-yellow-600'}`}>
-              {whisperAvailable ? 'Beschikbaar' : 'Niet beschikbaar (Demo modus)'}
+            <span className={`ml-2 ${whisperAvailable ? 'text-green-600' : 'text-red-600'}`}>
+              {whisperAvailable ? 'Beschikbaar' : 'Niet beschikbaar'}
             </span>
           </div>
           <div>
             <span className="font-medium text-neutral-700">Transcriptie:</span>
-            <span className="ml-2 text-blue-600">
-              {whisperAvailable ? 'Real-time Nederlands' : 'Gesimuleerd'}
-            </span>
+            <span className="ml-2 text-blue-600">Real-time Nederlands</span>
           </div>
         </div>
       </div>
@@ -323,9 +325,7 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center">
             <Loader className="w-5 h-5 text-blue-600 mr-3 animate-spin" />
-            <span className="text-blue-800 font-medium">
-              {whisperAvailable ? 'Transcriberen met Whisper...' : 'Genereren demo transcriptie...'}
-            </span>
+            <span className="text-blue-800 font-medium">Transcriberen met Whisper...</span>
           </div>
         </div>
       )}
@@ -356,11 +356,6 @@ const AudioRecorderComponent = ({ onTranscriptionComplete, onAudioUpload }) => {
                 <span className="ml-2">{Math.round(transcriptionResult.confidence * 100)}%</span>
               </div>
             </div>
-            {transcriptionResult.processingInfo?.isMockData && (
-              <div className="p-2 bg-yellow-100 border border-yellow-300 rounded text-sm text-yellow-800">
-                ⚠️ Dit is demo data. Start de Whisper service voor echte transcriptie.
-              </div>
-            )}
           </div>
         </div>
       )}

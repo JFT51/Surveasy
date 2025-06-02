@@ -116,7 +116,7 @@ const UploadStep = () => {
           Upload Kandidaat Bestanden
         </h2>
         <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-          Upload hier de mock CV (PDF) en audio interview die ik u heb doorgemaild.
+          Upload hier uw CV (PDF) en audio interview.
           Het systeem extraheert vaardigheden en zal een uitgebreide beoordeling genereren.
           In een volgende fase zullen kandidaten ook een ranking krijgen maar wil eerst dit overlopen.
         </p>

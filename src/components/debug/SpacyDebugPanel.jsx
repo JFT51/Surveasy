@@ -172,9 +172,6 @@ Talen:
             {serviceStatus.info.pipeline && (
               <div className="col-span-2"><strong>Pipeline:</strong> {serviceStatus.info.pipeline.join(', ')}</div>
             )}
-            {serviceStatus.info.demo_mode && (
-              <div className="col-span-2 text-orange-600"><strong>Demo Mode:</strong> Running in demo mode</div>
-            )}
           </div>
         </div>
       )}

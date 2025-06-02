@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "npx vite build",
-    "build:production": "npx vite build --mode production --logLevel info",
+    "build:production": "npx vite build --mode production --logLevel info && powershell -File ./scripts/copy-pdf-workers.ps1",
     "build:debug": "npx vite build --mode production --logLevel verbose",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "build:netlify": "npm install && npx vite build --mode production",
+    "build:netlify": "npm install && npm run build:production",
     "start": "vite preview --port 3000",
-    "clean": "rm -rf dist node_modules/.vite"
+    "clean": "powershell -Command \"if (Test-Path dist) { Remove-Item -Recurse -Force dist }; if (Test-Path node_modules/.vite) { Remove-Item -Recurse -Force node_modules/.vite }\"",
+    "postbuild": "powershell -File ./scripts/copy-pdf-workers.ps1"
   },
   "dependencies": {
     "chart.js": "^4.4.9",

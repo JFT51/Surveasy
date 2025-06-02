@@ -2,7 +2,6 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Upload, Users, BarChart3, Settings } from 'lucide-react';
 import NotificationSystem from './NotificationSystem';
-import DemoNotice from './DemoNotice';
 
 const Layout = ({ children }) => {
   const { state, resetApp } = useApp();
@@ -94,7 +93,6 @@ const Layout = ({ children }) => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 lg:px-8 py-16 pb-24">
-        <DemoNotice />
         {children}
       </main>
 

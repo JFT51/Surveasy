@@ -7,14 +7,7 @@
 const getWhisperServiceUrl = () => {
   // Try to get from environment variables (Vite)
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    const envUrl = import.meta.env.VITE_WHISPER_SERVICE_URL;
-
-    // If empty string in production (Netlify), return null to indicate demo mode
-    if (envUrl === '') {
-      return null;
-    }
-
-    return envUrl || 'http://localhost:5000';
+    return import.meta.env.VITE_WHISPER_SERVICE_URL || 'http://localhost:5000';
   }
 
   // Fallback to default

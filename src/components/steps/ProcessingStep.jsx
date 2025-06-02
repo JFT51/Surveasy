@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { FileText, Mic, Brain, CheckCircle, Loader } from 'lucide-react';
+import { FileText, Mic, Brain, CheckCircle, Loader, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { processCVText, processAudioWithWhisper, analyzeCandidate } from '../../utils/analysisEngine';
 import AIModelStatus from '../AIModelStatus';
 
 const ProcessingStep = () => {
   const { state, setExtractedData, setAnalysis, setStep, setProcessing } = useApp();
-  const { processing, success, info, dataQuality } = useNotifications();
+  const { processing, success, error } = useNotifications();
   const [currentTask, setCurrentTask] = useState('');
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState([]);
@@ -56,10 +56,6 @@ const ProcessingStep = () => {
         setProcessingNotificationId(notificationId);
 
         addLog('AI analyse gestart...', 'info');
-        info('Demo modus actief - Resultaten zijn gebaseerd op voorbeelddata', {
-          title: 'Demo Modus',
-          dataQuality: 'mock'
-        });
 
         // Step 1: Process CV
         updateProgress(10, 'CV wordt verwerkt met PDF.js...');
@@ -73,12 +69,13 @@ const ProcessingStep = () => {
           if (cvResult.metadata.isPDFExtraction) {
             addLog(`PDF succesvol verwerkt: ${cvResult.metadata.wordCount} woorden uit ${cvResult.metadata.pageCount} pagina's`, 'success');
             addLog(`Secties gevonden: ${cvResult.metadata.sections?.join(', ') || 'Geen'}`, 'info');
+          } else if (cvResult.metadata.isOCRExtraction) {
+            addLog(`CV verwerkt met OCR fallback: ${cvResult.metadata.wordCount} woorden`, 'warning');
           } else {
-            addLog(`Fallback modus gebruikt: ${cvResult.metadata.fallbackReason}`, 'warning');
-            addLog(`Mock data geladen: ${cvResult.metadata.wordCount} woorden`, 'info');
+            addLog('CV verwerking mislukt, onbekende fout', 'error');
           }
         } else {
-          addLog('CV verwerking mislukt, fallback gebruikt', 'warning');
+          addLog('CV verwerking mislukt, onbekende fout', 'error'); // Changed from 'fallback gebruikt', 'warning'
         }
 
         const cvText = cvResult.extractedText;
@@ -114,13 +111,9 @@ const ProcessingStep = () => {
 
           audioTranscript = audioResult.audioTranscript;
 
-          if (audioResult.success && audioResult.metadata.isRealTranscription) {
-            addLog(`Whisper transcriptie succesvol: ${audioResult.metadata.wordCount} woorden`, 'success');
-            addLog(`Taal: ${audioResult.metadata.language}, Betrouwbaarheid: ${Math.round(audioResult.metadata.confidence * 100)}%`, 'info');
-            addLog(`Model: ${audioResult.transcriptionData.processingInfo?.model || 'Whisper'}, Duur: ${Math.round(audioResult.metadata.duration)}s`, 'info');
-          } else {
-            throw new Error('Whisper transcription failed - no real transcription available');
-          }
+          addLog(`Whisper transcriptie succesvol: ${audioResult.metadata.wordCount} woorden`, 'success');
+          addLog(`Taal: ${audioResult.metadata.language}, Betrouwbaarheid: ${Math.round(audioResult.metadata.confidence * 100)}%`, 'info');
+          addLog(`Model: ${audioResult.transcriptionData.processingInfo?.model || 'Whisper'}, Duur: ${Math.round(audioResult.metadata.duration)}s`, 'info');
         } catch (error) {
           addLog(`Audio transcriptie mislukt: ${error.message}`, 'error');
           throw new Error(`Audio transcription failed: ${error.message}. Please ensure the Whisper service is running on port 5000.`);
@@ -160,12 +153,6 @@ const ProcessingStep = () => {
           duration: 4000
         });
 
-        dataQuality('mock', {
-          title: 'Demo Resultaten',
-          message: 'Resultaten zijn gebaseerd op voorbeelddata voor demonstratiedoeleinden. In productie worden echte AI-modellen gebruikt.',
-          duration: 6000
-        });
-
         // Navigate to results after a short delay
         setTimeout(() => {
           setProcessing({ isProcessing: false, currentTask: '', progress: 100 });
@@ -186,9 +173,9 @@ const ProcessingStep = () => {
   const getLogIcon = (type) => {
     switch (type) {
       case 'success': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error': return <CheckCircle className="w-4 h-4 text-red-500" />;
-      case 'warning': return <CheckCircle className="w-4 h-4 text-yellow-500" />;
-      case 'info': return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case 'error': return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'info': return <Info className="w-4 h-4 text-blue-500" />;
       default: return <Loader className="w-4 h-4 text-blue-500 animate-spin" />;
     }
   };

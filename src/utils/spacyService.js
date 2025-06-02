@@ -7,14 +7,7 @@
 const getSpacyServiceUrl = () => {
   // Try to get from environment variables (Vite)
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    const envUrl = import.meta.env.VITE_SPACY_SERVICE_URL;
-
-    // If empty string in production (Netlify), return null to indicate demo mode
-    if (envUrl === '') {
-      return null;
-    }
-
-    return envUrl || 'http://localhost:5001';
+    return import.meta.env.VITE_SPACY_SERVICE_URL || 'http://localhost:5001';
   }
 
   // Fallback to default

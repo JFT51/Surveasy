@@ -175,8 +175,6 @@ const AIToolsStatus = ({ analysisData }) => {
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'planned':
         return <Clock className="w-5 h-5 text-blue-600" />;
-      case 'mock':
-        return <Zap className="w-5 h-5 text-yellow-600" />;
       default:
         return <AlertTriangle className="w-5 h-5 text-gray-400" />;
     }
@@ -186,13 +184,11 @@ const AIToolsStatus = ({ analysisData }) => {
     const badges = {
       active: 'bg-green-100 text-green-800 border-green-200',
       planned: 'bg-blue-100 text-blue-800 border-blue-200',
-      mock: 'bg-yellow-100 text-yellow-800 border-yellow-200'
     };
 
     const labels = {
       active: 'Actief',
       planned: 'Gepland',
-      mock: 'Demo Data'
     };
 
     return (

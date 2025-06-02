@@ -55,7 +55,7 @@ const AIModelStatus = ({ step, compact = false }) => {
         {
           name: 'Whisper API',
           purpose: 'Audio transcription',
-          status: 'planned',
+          status: 'implemented',
           description: 'Speech-to-text conversion for Dutch language'
         }
       ]
@@ -87,8 +87,6 @@ const AIModelStatus = ({ step, compact = false }) => {
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'planned':
         return <Clock className="w-4 h-4 text-blue-600" />;
-      case 'demo':
-        return <Zap className="w-4 h-4 text-yellow-600" />;
       default:
         return <Database className="w-4 h-4 text-neutral-400" />;
     }
@@ -100,8 +98,6 @@ const AIModelStatus = ({ step, compact = false }) => {
         return 'Actief';
       case 'planned':
         return 'Gepland';
-      case 'demo':
-        return 'Demo';
       default:
         return 'Onbekend';
     }
@@ -179,13 +175,6 @@ const AIModelStatus = ({ step, compact = false }) => {
             <div>
               <span className="font-medium text-blue-800">Gepland</span>
               <p className="text-neutral-600">Volgende implementatiefase</p>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <Zap className="w-4 h-4 text-yellow-600 mr-2" />
-            <div>
-              <span className="font-medium text-yellow-800">Demo</span>
-              <p className="text-neutral-600">Gesimuleerd voor demonstratie</p>
             </div>
           </div>
         </div>

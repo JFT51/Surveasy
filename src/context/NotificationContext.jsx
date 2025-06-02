@@ -124,11 +124,6 @@ export function NotificationProvider({ children }) {
         message: 'Sommige bestanden konden niet volledig worden verwerkt. Resultaten zijn gebaseerd op beschikbare data.',
         type: 'warning'
       },
-      mock: {
-        title: 'Demo Modus Actief',
-        message: 'Resultaten zijn gebaseerd op voorbeelddata voor demonstratiedoeleinden.',
-        type: 'info'
-      }
     };
 
     const notification = messages[type];

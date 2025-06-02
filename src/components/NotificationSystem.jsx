@@ -74,7 +74,6 @@ const NotificationSystem = () => {
     const badges = {
       complete: { icon: Shield, text: 'Volledige Data', color: 'success' },
       partial: { icon: Database, text: 'Gedeeltelijke Data', color: 'warning' },
-      mock: { icon: Zap, text: 'Demo Data', color: 'info' }
     };
 
     const badge = badges[notification.dataQuality];
